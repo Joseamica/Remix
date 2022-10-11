@@ -16,29 +16,29 @@ export const action = async ({ params, request }) => {
   const id = parseInt(formData.get("id"));
 
   // EXPLAIN get quantity value
-  const quantity = parseInt(formData.get("quantity"));
+  const quantity = formData.get("quantity");
   const name = formData.get("name");
   const price = parseInt(formData.get("price"));
   const total = price * quantity;
-  const submit = formData.get("submit");
 
-  if (submit) {
-    await db.orderItem.create({
-      data: {
-        price: price,
-        quantity: quantity,
-        MenuItem: {
-          connect: {
-            id: id,
-          },
-        },
-      },
-    });
-  }
+  // if (submit === "submit") {
+  // await db.orderItem.create({
+  //   data: {
+  //     price: price,
+  //     quantity: parseInt(quantity),
+  //     MenuItem: {
+  //       connect: {
+  //         id: id,
+  //       },
+  //     },
+  //   },
+  // });
+  // }
 
   switch (quantity) {
     case "increaseQuantity":
-      console.log("increased!");
+      const q = quantity + 1;
+      console.log("quantity", q);
       break;
     case "decreaseQuantity":
       console.log("decreased!!");
@@ -207,7 +207,7 @@ export default function MenuItem() {
         {showModal ? (
           <Modal onClose={() => setShowModal(false)} modalClassName={true}>
             <ModalContainer imgHeader={menuItem.image}>
-              <Form className="flex flex-col space-y-2" method="POST">
+              <fetcher.Form className="flex flex-col space-y-2" method="post">
                 <div className="flex flex-row justify-between">
                   <h4 className="font-semibold text-lg">{menuItem.name}</h4>
                   <span>${menuItem.price}</span>
@@ -219,11 +219,11 @@ export default function MenuItem() {
                   <div className="flex flex-row items-center space-x-4">
                     <button
                       name="quantity"
-                      value={quantity}
+                      value="decreaseQuantity"
                       className="h-8 w-8 ring-1 ring-gray-400  rounded-full"
-                      onClick={() =>
-                        setQuantity(quantity <= 0 ? 0 : quantity - 1)
-                      }
+                      // onClick={() =>
+                      //   setQuantity(quantity <= 0 ? 0 : quantity - 1)
+                      // }
                       disabled={quantity === 0}
                     >
                       <span>-</span>
@@ -231,9 +231,9 @@ export default function MenuItem() {
                     <label>{quantity}</label>
                     <button
                       name="quantity"
-                      value={quantity}
+                      value="increaseQuantity"
                       className="h-8 w-8 ring-1 ring-gray-400  rounded-full"
-                      onClick={() => setQuantity(quantity + 1)}
+                      // onClick={() => setQuantity(quantity + 1)}
                     >
                       <span>+</span>
                     </button>
@@ -252,13 +252,13 @@ export default function MenuItem() {
 
                 <button
                   className="largeButton bg-black text-white justify-center text-center"
-                  name="submit"
-                  value="submit"
-                  onClick={() => setShowModal(false)}
+                  type="submit"
+
+                  // onClick={() => setShowModal(false)}
                 >
                   Agregar
                 </button>
-              </Form>
+              </fetcher.Form>
             </ModalContainer>
           </Modal>
         ) : null}
