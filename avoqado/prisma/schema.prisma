@@ -1,0 +1,129 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Restaurant {
+  id    Int    @id @default(autoincrement())
+  name  String
+  logo  String
+  email String
+  phone Int
+
+  Branch Branch[]
+}
+
+model Branch {
+  id              Int        @id @default(autoincrement())
+  name            String
+  ppt_image       String
+  email           String
+  phone           Int?
+  city            String
+  address         String
+  extraAddress    String
+  rating          Float
+  rating_quantity Int
+  cuisine         String
+  restaurant      Restaurant @relation(fields: [restaurantId], references: [id])
+  restaurantId    Int
+  Table           Table[]
+  Menu            Menu[]
+}
+
+model Table {
+  id                Int     @id @default(autoincrement())
+  table_number      Int
+  order_in_progress Boolean
+  branch            Branch  @relation(fields: [branchId], references: [id])
+  branchId          Int
+  Order             Order[]
+}
+
+model Menu {
+  id             Int              @id @default(autoincrement())
+  name           String?
+  branch         Branch           @relation(fields: [branchId], references: [id])
+  branchId       Int
+  MenuCategories MenuCategories[]
+}
+
+model MenuCategories {
+  id       Int        @id @default(autoincrement())
+  name     String
+  menu     Menu       @relation(fields: [menuId], references: [id])
+  menuId   Int
+  MenuItem MenuItem[]
+}
+
+model MenuItem {
+  id               Int             @id @default(autoincrement())
+  image            String
+  name             String
+  description      String
+  price            Float
+  available        Boolean
+  menuCategories   MenuCategories? @relation(fields: [menuCategoriesId], references: [id])
+  menuCategoriesId Int?
+  MenuItemExtra    MenuItemExtra[]
+  OrderItem        OrderItem[]
+}
+
+model MenuItemExtra {
+  id             Int              @id @default(autoincrement())
+  image          String
+  name           String
+  description    String
+  price          Float
+  available      Boolean
+  MenuItem       MenuItem?        @relation(fields: [menuItemId], references: [id])
+  menuItemId     Int?
+  OrderItemExtra OrderItemExtra[]
+}
+
+model Order {
+  id           Int      @id @default(autoincrement())
+  payed        Boolean
+  creationDate DateTime
+  orderedDate  DateTime
+
+  Table     Table?      @relation(fields: [tableId], references: [id])
+  tableId   Int?
+  OrderItem OrderItem[]
+  User      User[]
+}
+
+model OrderItem {
+  id             Int              @id @default(autoincrement())
+  price          Float
+  quantity       Int
+  MenuItem       MenuItem?        @relation(fields: [menuItemId], references: [id])
+  menuItemId     Int?
+  Order          Order?           @relation(fields: [orderId], references: [id])
+  orderId        Int?
+  OrderItemExtra OrderItemExtra[]
+}
+
+model OrderItemExtra {
+  id              Int            @id @default(autoincrement())
+  quantity        Int
+  MenuItemExtra   MenuItemExtra? @relation(fields: [menuItemExtraId], references: [id])
+  menuItemExtraId Int?
+  OrderItem       OrderItem?     @relation(fields: [orderItemId], references: [id])
+  orderItemId     Int?
+}
+
+model User {
+  id      Int    @id @default(autoincrement())
+  email   String
+  total   Float
+  Order   Order? @relation(fields: [orderId], references: [id])
+  orderId Int?
+}

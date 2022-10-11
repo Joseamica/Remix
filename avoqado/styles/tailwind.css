@@ -1,0 +1,11 @@
+@tailwind base;
+@tailwind components;
+
+.largeButton {
+    @apply py-3 px-4 w-full bg-black shadow-md rounded-lg my-1 hover:bg-white text-white  focus:text-black
+    focus:ring-2 focus:ring-black hover:text-black focus:bg-white;
+}
+
+.circleButton {}
+
+@tailwind utilities;
