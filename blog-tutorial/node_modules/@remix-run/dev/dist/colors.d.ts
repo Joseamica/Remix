@@ -1,0 +1,15 @@
+import chalk from "chalk";
+export declare const useColor: boolean;
+export declare const heading: chalk.Chalk | ((x: any) => any);
+export declare const arg: chalk.Chalk | ((x: any) => any);
+export declare const error: chalk.Chalk | ((x: any) => any);
+export declare const warning: chalk.Chalk | ((x: any) => any);
+export declare const hint: chalk.Chalk | ((x: any) => any);
+export declare const logoBlue: chalk.Chalk | ((x: any) => any);
+export declare const logoGreen: chalk.Chalk | ((x: any) => any);
+export declare const logoYellow: chalk.Chalk | ((x: any) => any);
+export declare const logoPink: chalk.Chalk | ((x: any) => any);
+export declare const logoRed: chalk.Chalk | ((x: any) => any);
+export declare const gray: chalk.Chalk | ((x: any) => any);
+export declare const blue: chalk.Chalk | ((x: any) => any);
+export declare const bold: chalk.Chalk | ((x: any) => any);
