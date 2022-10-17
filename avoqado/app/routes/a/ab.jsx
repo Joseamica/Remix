@@ -1,4 +1,4 @@
-import { Link, Outlet } from "@remix-run/react";
+import { Form, Link, Outlet } from "@remix-run/react";
 
 function A() {
   const ab = [
@@ -31,6 +31,15 @@ function A() {
       >
         <p className="text-xl font-bold">this is the outlet comp below</p>
         <p className="text-xl font-bold">VVVVV</p>
+        <Form reloadDocument method="get" className="flex flex-col">
+          <label>
+            search <input type="text" name="title" />
+          </label>
+          <label>
+            password <input type="password" name="password" />
+          </label>
+          <button type="submit">add</button>
+        </Form>
 
         <Outlet context={[ab]} />
       </div>

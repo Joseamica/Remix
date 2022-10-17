@@ -11,8 +11,8 @@ function Restaurant() {
       <div
       // style={{ background: "lightgrey", padding: 16 }}
       >
-        <p className="text-xl font-bold">this is the outlet comp below</p>
-        <p className="text-xl font-bold">VVVVV</p>
+        {/* <p className="text-xl font-bold">this is the outlet comp below</p>
+        <p className="text-xl font-bold">VVVVV</p> */}
 
         <Outlet />
       </div>

@@ -11,7 +11,6 @@ import { db } from "../../../utils/db.server";
 
 export const loader = async ({ params, request }) => {
   const url = new URL(request.url);
-
   const tableIdFromSearchParams = parseInt(url.searchParams.get("table"));
   const tableCount = await db.table.count({});
   const restId = parseInt(params.restId);
@@ -56,9 +55,9 @@ export const loader = async ({ params, request }) => {
   });
   const mealTime = {
     BREAKFAST: 7,
-    LUNCH: 12,
+    LUNCH: 23,
     DINNER: 19,
-    CLOSE: 22,
+    CLOSE: 23,
   };
   const date = new Date();
   const hour_of_the_day = date.getHours();
@@ -97,7 +96,7 @@ const BranchDetail = () => {
   const { branch, restaurant, menu, tableId } = useLoaderData();
   const [id] = branch;
   const [branchInfo] = branch;
-
+  console.log("tableid.tablenumner", tableId.table_number);
   return (
     <>
       <section
@@ -153,7 +152,9 @@ const BranchDetail = () => {
           ))}
         </button>
         <LargeButtonWithIcon
-          to={`/menu/?rest=${restaurant.id}&branch=${branchInfo.id}&meal=${menu.meal}`}
+          to={`/menu/?rest=${restaurant.id}&branch=${branchInfo.id}&meal=${
+            menu.meal
+          }&table=${tableId.table_number <= 0 ? 9999 : tableId.table_number}`}
         >
           <p>View the menu</p>
           <BookOpenIcon className="h-5 w-5" />

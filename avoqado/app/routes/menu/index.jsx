@@ -11,6 +11,8 @@ export const loader = async ({ params, request }) => {
   const restId = parseInt(url.searchParams.get("rest"));
   const branchId = parseInt(url.searchParams.get("branch"));
   const meal = url.searchParams.get("meal");
+  const tableId = parseInt(url.searchParams.get("table"));
+
   const allMenu = await db.menu.findMany({});
 
   if (!restId && !branchId && !meal) {
@@ -39,7 +41,7 @@ export const loader = async ({ params, request }) => {
     throw new Error("Menu not founded", { status: 404 });
   }
 
-  return redirect(`/menu/${menu.id}`);
+  return redirect(`/menu/${menu.id}/?table=${tableId}`);
 };
 
 //FUNCION

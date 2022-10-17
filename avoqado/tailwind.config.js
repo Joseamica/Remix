@@ -32,6 +32,7 @@ module.exports = {
         "custom-mobile": "repeat(4, 1fr)",
       },
       colors: {
+        bgWhite: "#000",
         mainTextColor: "#262626",
         redMainColor: "#F54748",
         slighlyGray: "#D6D6D9",

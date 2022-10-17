@@ -3,13 +3,14 @@ import { XIcon } from "@heroicons/react/outline";
 export const ModalContainer = ({
   children,
   imgHeader,
-  className,
+  Cname,
   closeButton,
   setShowModal,
+  cName,
 }) => {
   return (
     <div
-      className={`bottom-0 bg-white fixed inset-x-0  rounded-t-lg h-auto ${className}`}
+      className={` ${cName} bottom-0 bg-white fixed inset-x-0  rounded-t-lg h-auto max-h-max z-50 overflow-scroll `}
     >
       {closeButton && (
         <button onClick={() => setShowModal(false)}>
@@ -22,7 +23,9 @@ export const ModalContainer = ({
           className="max-h-60 w-full object-cover rounded-t-lg"
         />
       )}
-      <div className="p-5">{children}</div>
+      <div className="p-5  overflow-y-scroll max-h-screen  z-50 ">
+        {children}
+      </div>
     </div>
   );
 };
