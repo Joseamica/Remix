@@ -12,6 +12,7 @@ export { ActionButton } from "./ui/Buttons/ActionButton";
 export { ActionButtonElements } from "./ui/Buttons/ActionButtonElements";
 export { TipButton } from "./ui/Buttons/TipButton";
 export { LargeButton } from "./ui/Buttons/LargeButton";
+export { LargeButtonMain } from "./ui/Buttons/Button";
 
 export { MainHeader } from "./ui/Header/MainHeader";
 export { Modal } from "./ui/Modal/Modal";

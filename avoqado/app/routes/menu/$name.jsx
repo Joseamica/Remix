@@ -46,51 +46,51 @@ export const action = async ({ params, request }) => {
   const menuItemId = formData.get("cartItem");
   const menuIId = parseInt(formData.get("menuItemId"));
 
-  switch (action) {
-    case "increaseQuantityCart":
-      const newQuantity = 1;
-      const orderItemQuantity = await db.orderItem.findFirst({
-        where: {
-          menuItemId: menuIId,
-        },
-        select: {
-          quantity: true,
-        },
-      });
-      const sum = parseInt(orderItemQuantity.quantity) + newQuantity;
-      console.log("SUM!", sum);
-      await db.orderItem.update({
-        data: {
-          quantity: sum,
-        },
-        where: {
-          id: Number(menuItemId),
-        },
-      });
-      break;
-    case "decreaseQuantityCart": {
-      const newQuantity = -1;
-      const orderItemQuantity = await db.orderItem.findFirst({
-        where: {
-          menuItemId: menuIId,
-        },
-        select: {
-          quantity: true,
-        },
-      });
-      const sum = parseInt(orderItemQuantity.quantity) + newQuantity;
-      console.log("SUM!", sum);
-      await db.orderItem.update({
-        data: {
-          quantity: sum,
-        },
-        where: {
-          id: Number(menuItemId),
-        },
-      });
-      break;
-    }
-  }
+  // switch (action) {
+  //   case "increaseQuantityCart":
+  //     const newQuantity = 1;
+  //     const orderItemQuantity = await db.orderItem.findFirst({
+  //       where: {
+  //         menuItemId: menuIId,
+  //       },
+  //       select: {
+  //         quantity: true,
+  //       },
+  //     });
+  //     const sum = parseInt(orderItemQuantity.quantity) + newQuantity;
+  //     console.log("SUM!", sum);
+  //     await db.orderItem.update({
+  //       data: {
+  //         quantity: sum,
+  //       },
+  //       where: {
+  //         id: Number(menuItemId),
+  //       },
+  //     });
+  //     break;
+  //   case "decreaseQuantityCart": {
+  //     const newQuantity = -1;
+  //     const orderItemQuantity = await db.orderItem.findFirst({
+  //       where: {
+  //         menuItemId: menuIId,
+  //       },
+  //       select: {
+  //         quantity: true,
+  //       },
+  //     });
+  //     const sum = parseInt(orderItemQuantity.quantity) + newQuantity;
+  //     console.log("SUM!", sum);
+  //     await db.orderItem.update({
+  //       data: {
+  //         quantity: sum,
+  //       },
+  //       where: {
+  //         id: Number(menuItemId),
+  //       },
+  //     });
+  //     break;
+  //   }
+  // }
 
   const errors = {};
 
