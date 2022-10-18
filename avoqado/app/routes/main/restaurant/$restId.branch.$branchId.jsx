@@ -4,42 +4,83 @@ import {
   StarIcon,
 } from "@heroicons/react/outline";
 import { redirect } from "@remix-run/node";
-import { useLoaderData } from "@remix-run/react";
-import React, { useState } from "react";
-import { LargeButtonWithIcon } from "../../../components";
+import { Form, useLoaderData } from "@remix-run/react";
+import React, { useEffect, useState } from "react";
+import {
+  LargeButtonWithIcon,
+  Modal,
+  ModalContainer,
+  TipButton,
+} from "../../../components";
 import { db } from "../../../utils/db.server";
 import { getTableCount, getOrderId } from "../../../models/order.server";
 import { LargeButtonMain } from "~/components/ui/Buttons/Button";
 
+export const action = async ({ params, request }) => {
+  const formData = await request.formData();
+  const url = new URL(request.url);
+  const tipAmount = formData.get("tip");
+  console.log(tipAmount);
+  return { tipAmount };
+};
+
 export const loader = async ({ params, request }) => {
   const url = new URL(request.url);
+  const path = new URL(request.url).pathname;
+  console.log(path);
+
   const tableIdFromSearchParams = parseInt(url.searchParams.get("table"));
+
   const restId = parseInt(params.restId);
   const branchId = parseInt(params.branchId);
 
+  let orderItemsOnTable = "";
   const tableCount = await getTableCount();
 
-  if (tableCount < tableIdFromSearchParams) {
+  if (!tableIdFromSearchParams) {
+    throw new Error(
+      `Mesa ${tableIdFromSearchParams} no asignada por medio de url`
+    );
+  }
+  // Verificar si la mesa existe
+  if (tableCount <= tableIdFromSearchParams) {
     throw new Error(`La mesa ${tableIdFromSearchParams} no existe.`);
   }
-  const [orderId] = await getOrderId(tableIdFromSearchParams);
+  const order = await getOrderId(tableIdFromSearchParams);
 
-  const orderItemsOnTable = await db.orderItem.findMany({
-    where: {
-      orderId: Number(orderId.id),
-    },
-    include: {
-      MenuItem: true,
-    },
-  });
+  if (order.length <= 0) {
+    await db.order.create({
+      data: {
+        payed: false,
+        creationDate: new Date(),
+        orderedDate: new Date(),
+        Table: {
+          connect: {
+            id: tableIdFromSearchParams,
+          },
+        },
+      },
+    });
+  } else {
+    orderItemsOnTable = await db.orderItem.findMany({
+      where: {
+        orderId: Number(order[0].id),
+      },
+      include: {
+        MenuItem: true,
+      },
+    });
+  }
 
-  // const totalAmount = await db.orderItem.groupBy({});
-
-  const total = orderItemsOnTable.map((item) => {
-    const total = item.price * item.quantity;
-    return total;
-  });
-  const totalBill = total.reduce((a, b) => a + b);
+  // if orderitems doesnt exist on the order.
+  if (orderItemsOnTable <= 0) {
+    totalBill = 0;
+  } else {
+    const total = orderItemsOnTable.map((item) => {
+      return item.price * item.quantity;
+    });
+    totalBill = total?.reduce((a, b) => a + b);
+  }
 
   tableIdFromSearchParams
     ? (tableId = await db.table.findUnique({
@@ -103,7 +144,6 @@ export const loader = async ({ params, request }) => {
     restaurant,
     menu,
     tableId,
-    orderId,
     orderItemsOnTable,
     totalBill,
   };
@@ -207,11 +247,11 @@ const BranchDetail = () => {
 export default BranchDetail;
 
 export const OrderDetail = () => {
-  const { orderItemsOnTable, orderId, totalBill } = useLoaderData();
-  console.log(
-    `%corderId ${orderId.id}`,
-    "color: green; background: yellow; font-size: 30px"
-  );
+  const { orderItemsOnTable, totalBill } = useLoaderData();
+  // console.log(
+  //   `%corderId ${orderId.id}`,
+  //   "color: green; background: yellow; font-size: 30px"
+  // );
 
   return (
     <div className="bg-white shadow-lg p-2 space-y-2 rounded-lg">
@@ -221,53 +261,94 @@ export const OrderDetail = () => {
       </div>
       <hr />
 
-      {orderItemsOnTable.map((orderItems) => {
-        const menuItem = orderItems.MenuItem;
-        return (
-          <div className="w-full" key={orderItems.id}>
-            <div className="flex flex-row justify-between items-center space-x-2 ">
-              <div className="flex flex-row items-center space-x-4 shrink-0 ">
-                {/* Quantity */}
-                <label className="font-semibold p-0.5  text-mainTextColor rounded-lg ring-2 ring-slate-200 text-sm">
-                  {orderItems.quantity}
-                </label>
-                {/* Image */}
-                <img src={menuItem.image} className="w-10 h-10 rounded-lg" />
-              </div>
-              {/* REVIEW si el name es muy largo, se buguea, como le hago para que se salte la linea */}
-              <div className="flex w-full flex-col text-clip overflow-hidden ">
-                <p className="text-md font-semibold truncate ">
-                  {menuItem.name}
+      {Array.isArray(orderItemsOnTable) &&
+        orderItemsOnTable.map((orderItems) => {
+          const menuItem = orderItems.MenuItem;
+          return (
+            <div className="w-full" key={orderItems.id}>
+              <div className="flex flex-row justify-between items-center space-x-2 ">
+                <div className="flex flex-row items-center space-x-4 shrink-0 ">
+                  {/* Quantity */}
+                  <label className="font-semibold p-0.5  text-mainTextColor rounded-lg ring-2 ring-slate-200 text-sm">
+                    {orderItems.quantity}
+                  </label>
+                  {/* Image */}
+                  <img src={menuItem.image} className="w-10 h-10 rounded-lg" />
+                </div>
+                {/* REVIEW si el name es muy largo, se buguea, como le hago para que se salte la linea */}
+                <div className="flex w-full flex-col text-clip overflow-hidden ">
+                  <p className="text-md font-semibold truncate ">
+                    {menuItem.name}
+                  </p>
+                  <p className="text-sm truncate">
+                    {/* {specs} {extraSpecs ? <>• {extraSpecs}</> : null} */}
+                  </p>
+                </div>
+                {orderItems.quantity > 1 && (
+                  <p className="text-sm text-gray-500">${orderItems.price}</p>
+                )}
+                <p className="text-sm">
+                  ${orderItems.price * orderItems.quantity}
                 </p>
-                <p className="text-sm truncate">
-                  {/* {specs} {extraSpecs ? <>• {extraSpecs}</> : null} */}
-                </p>
               </div>
-              {orderItems.quantity > 1 && (
-                <p className="text-sm text-gray-500">${orderItems.price}</p>
-              )}
-              <p className="text-sm">
-                ${orderItems.price * orderItems.quantity}
-              </p>
             </div>
-          </div>
-        );
-      })}
+          );
+        })}
     </div>
   );
 };
 
 export const Payment = () => {
-  const [typeOfPayment, settypeOfPayment] = useState("");
+  const [typeOfPayment, setTypeOfPayment] = useState("");
   console.log(typeOfPayment);
   return (
     <>
-      <LargeButtonMain onClick={() => settypeOfPayment("split")}>
+      <LargeButtonMain onClick={() => setTypeOfPayment("split")}>
         <p>SPLIT BILL</p>
       </LargeButtonMain>
-      <LargeButtonMain onClick={() => settypeOfPayment("payFull")}>
+      <LargeButtonMain onClick={() => setTypeOfPayment("payFull")}>
         <p>PAY BILL</p>
       </LargeButtonMain>
+      {typeOfPayment === "split" && (
+        <Modal onClose={() => setTypeOfPayment(false)}>
+          <ModalContainer>hola</ModalContainer>
+        </Modal>
+      )}
+      {typeOfPayment === "payFull" && <PayFull />}
     </>
+  );
+};
+
+export const PayFull = () => {
+  const { totalBill } = useLoaderData();
+
+  useEffect(() => {}, []);
+
+  return (
+    <div>
+      <Form className="flex flex-row space-x-1 justify-between" method="post">
+        <TipButton
+          concept="Standard"
+          amount="$20"
+          name="tip"
+          value="standard"
+        />
+        <TipButton concept="Generous" amount="$20" />
+        <TipButton concept="Amazing" amount="$20" />
+        <TipButton concept="Other" amount="$20" />
+      </Form>
+      <div className="flex flex-row justify-between">
+        <p>subtotal</p>
+        <p>${totalBill}</p>
+      </div>
+      <div className="flex flex-row justify-between">
+        <p>propina</p>
+        <p>$$$</p>
+      </div>
+      <div className="flex flex-row justify-between">
+        <p>Total</p>
+        <p>$</p>
+      </div>
+    </div>
   );
 };

@@ -15,11 +15,12 @@ export function getOrderId(idTable) {
   });
 }
 
-export function createOrder(price, quantity, id, tableId) {
+export function createOrder(price, quantity, id, tableId, orderId) {
   return db.orderItem.create({
     data: {
       price: price,
       quantity: quantity,
+      orderId: orderId,
       MenuItem: {
         connect: {
           id: id,

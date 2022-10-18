@@ -711,11 +711,6 @@ video {
   margin-bottom: 0.5rem;
 }
 
-.mx-2 {
-  margin-left: 0.5rem;
-  margin-right: 0.5rem;
-}
-
 .mr-2 {
   margin-right: 0.5rem;
 }
@@ -1298,11 +1293,6 @@ video {
   line-height: 1rem;
 }
 
-.text-3xl {
-  font-size: 1.875rem;
-  line-height: 2.25rem;
-}
-
 .font-medium {
   font-weight: 500;
 }
@@ -1357,10 +1347,6 @@ video {
 .underline {
   -webkit-text-decoration-line: underline;
           text-decoration-line: underline;
-}
-
-.opacity-70 {
-  opacity: 0.7;
 }
 
 .shadow-2xl {

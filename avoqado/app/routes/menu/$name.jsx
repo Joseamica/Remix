@@ -43,54 +43,48 @@ export const action = async ({ params, request }) => {
 
   // PART CART
   const action = formData.get("action");
-  const menuItemId = formData.get("cartItem");
-  const menuIId = parseInt(formData.get("menuItemId"));
+  const cartItem = formData.get("cartItem");
+  const cartQuantity = Number(formData.get("cartQuantity"));
+  // const menuIId = parseInt(formData.get("menuItemId"));
 
-  // switch (action) {
-  //   case "increaseQuantityCart":
-  //     const newQuantity = 1;
-  //     const orderItemQuantity = await db.orderItem.findFirst({
-  //       where: {
-  //         menuItemId: menuIId,
-  //       },
-  //       select: {
-  //         quantity: true,
-  //       },
-  //     });
-  //     const sum = parseInt(orderItemQuantity.quantity) + newQuantity;
-  //     console.log("SUM!", sum);
-  //     await db.orderItem.update({
-  //       data: {
-  //         quantity: sum,
-  //       },
-  //       where: {
-  //         id: Number(menuItemId),
-  //       },
-  //     });
-  //     break;
-  //   case "decreaseQuantityCart": {
-  //     const newQuantity = -1;
-  //     const orderItemQuantity = await db.orderItem.findFirst({
-  //       where: {
-  //         menuItemId: menuIId,
-  //       },
-  //       select: {
-  //         quantity: true,
-  //       },
-  //     });
-  //     const sum = parseInt(orderItemQuantity.quantity) + newQuantity;
-  //     console.log("SUM!", sum);
-  //     await db.orderItem.update({
-  //       data: {
-  //         quantity: sum,
-  //       },
-  //       where: {
-  //         id: Number(menuItemId),
-  //       },
-  //     });
-  //     break;
-  //   }
-  // }
+  switch (action) {
+    case "increaseQuantityCart":
+      await db.orderItem.update({
+        where: {
+          id: Number(cartItem),
+        },
+        data: {
+          quantity: cartQuantity + 1,
+        },
+      });
+      break;
+    case "decreaseQuantityCart":
+      await db.orderItem.update({
+        where: {
+          id: Number(cartItem),
+        },
+        data: {
+          quantity: cartQuantity - 1,
+        },
+      });
+      const quantityCartItem = await db.orderItem.findUnique({
+        where: {
+          id: Number(cartItem),
+        },
+        select: {
+          quantity: true,
+        },
+      });
+
+      if (quantityCartItem.quantity <= 0) {
+        await db.orderItem.delete({
+          where: {
+            id: Number(cartItem),
+          },
+        });
+      }
+      break;
+  }
 
   const errors = {};
 
@@ -104,36 +98,43 @@ export const action = async ({ params, request }) => {
     throw new Error("table id no definido", { status: 404 });
   }
 
-  if (submit === "submit") {
-    const orderId = await getOrderId(tableIdFromParams);
+  const orderId = await getOrderId(tableIdFromParams);
 
-    // EXPLAIN = if order doesnt exists create
-    if (Array.isArray(orderId.Order) && orderId.Order.length === 0) {
-      await createOrder(price, quantity, id, tableIdFromParams);
-    } else if (orderId.Order[0].payed === false) {
-      const orderItemId = await db.orderItem.findMany({
+  if (orderId.Order.length <= 0) {
+    throw new Error("Orden no existe, error -> /menu/$name/linea-110");
+  }
+
+  // if (orderId.Order.length > 0 && orderId.Order[0].payed === true) {
+  //   console.log(`BORRANDO ORDEN PAGADA #${orderId.Order[0].id}`);
+  //   await deleteOrder(orderId.Order[0].id);
+  // }
+
+  //EXPLAIN
+  if (submit === "submit") {
+    const orderItemId = await db.orderItem.findMany({
+      where: {
+        menuItemId: id,
+        orderId: orderId.Order[0].id,
+      },
+    });
+    if (id !== orderItemId[0]?.menuItemId) {
+      await createOrderItem(
+        price,
+        quantity,
+        id,
+        orderId.Order[0].id,
+        tableIdFromParams
+      );
+      // EXPLAIN else if orderItem exists then add more to the same orderitem.
+    } else {
+      await db.orderItem.updateMany({
         where: {
           menuItemId: id,
         },
+        data: {
+          quantity: { increment: quantity },
+        },
       });
-      //EXPLAIN if menuitem === id provided (if id is the same id)
-      if (id !== orderItemId[0]?.menuItemId) {
-        await createOrderItem(price, quantity, id, orderId.Order[0].id);
-        // EXPLAIN else if orderItem exists then add more to the same orderitem.
-      } else {
-        await db.orderItem.updateMany({
-          where: {
-            menuItemId: id,
-          },
-          data: {
-            quantity: { increment: quantity },
-          },
-        });
-      }
-    } else if (orderId.Order[0].payed === true) {
-      await deleteOrder(orderId.Order[0].id);
-    } else {
-      throw new Error("mesa no existe", { status: 404 });
     }
   }
 
@@ -147,6 +148,7 @@ export const handle = {
 
 //LOADER
 export const loader = async ({ params, request }) => {
+  // EXPLAIN if order payed === true then delete
   await db.order.deleteMany({
     where: {
       payed: true,
@@ -158,7 +160,6 @@ export const loader = async ({ params, request }) => {
     where: {
       id: tableIdFromParams,
     },
-
     select: {
       Order: {
         where: {
@@ -175,9 +176,34 @@ export const loader = async ({ params, request }) => {
     },
   });
 
-  const orderItem = order.Order.map((item) => {
-    return item.OrderItem;
+  const orderId = await getOrderId(tableIdFromParams);
+  if (orderId.Order.length <= 0) {
+    await db.order.create({
+      data: {
+        tableId: tableIdFromParams,
+        payed: false,
+        creationDate: new Date(),
+        orderedDate: new Date(),
+      },
+    });
+  }
+
+  const orderItem = await db.orderItem.findMany({
+    where: {
+      orderId: orderId.Order[0].id,
+    },
+    include: {
+      MenuItem: true,
+    },
+    orderBy: {
+      id: "asc",
+    },
   });
+
+  // const orderItem = order.Order.map((item) => {
+  //   return item.OrderItem;
+  // });
+  // console.log("AAAAAAA", orderItem.Order);
 
   //EXPLAIN params es = { name: "1"}
   const { name } = params;
@@ -224,8 +250,6 @@ export default function MenuItem() {
   const [quantity, setQuantity] = useState(1);
   const [scroll, setScroll] = useState();
   const [selected, setSelected] = useState();
-  const [orderItems] = orderItem;
-
   const handleScroll = (ref) => {
     // TODO Arreglar el scroll, esta acomodado manualmente, pero falta que se ponga abajo del header automaticamente
 
@@ -423,13 +447,13 @@ export default function MenuItem() {
                 title="Cart"
               />
               <div className="mt-10">
-                {orderItems.map((item, i) => {
+                {orderItem.map((item, i) => {
                   const menuItem = item.MenuItem;
                   return (
-                    <>
+                    <div key={item.id}>
                       <fetcher.Form
                         method="POST"
-                        key={i}
+                        key={item.id}
                         className="flex flex-col bg-white p-2 m-1 shadow-xl"
                       >
                         <div className="flex flex-row justify-between items-center">
@@ -475,20 +499,28 @@ export default function MenuItem() {
                           name="menuItemId"
                           value={menuItem.id}
                         />
+                        <input type="hidden" name="cartItem" value={item.id} />
+                        <input
+                          type="hidden"
+                          name="cartQuantity"
+                          value={item.quantity}
+                        />
                       </fetcher.Form>
-                    </>
+                    </div>
                   );
                 })}
               </div>
             </ModalContainer>
           </Modal>
         )}
-        <button
-          className="bg-black sticky text-xl mt-auto ml-auto  bottom-5 right-5 rounded-lg p-5 w-full text-white"
-          onClick={() => setShowModal({ cartInfo: true })}
-        >
-          <p>Cart ({orderItems ? orderItems.length : 0})</p>
-        </button>
+        {orderItem.length >= 1 && (
+          <button
+            className="bg-black sticky text-xl mt-auto ml-auto  bottom-5 right-5 rounded-lg p-5 w-full text-white"
+            onClick={() => setShowModal({ cartInfo: true })}
+          >
+            <p>Cart ({orderItem ? orderItem.length : 0})</p>
+          </button>
+        )}
       </section>
       <div ref={ref2}></div>
     </>
