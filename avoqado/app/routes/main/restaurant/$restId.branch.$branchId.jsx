@@ -16,12 +16,15 @@ import {
 import { db } from "../../../utils/db.server";
 import { getTableCount, getOrderId } from "../../../models/order.server";
 import { LargeButtonMain } from "~/components/ui/Buttons/Button";
+import { RestaurantInfoCard } from "~/comp/index";
 
 export const action = async ({ params, request }) => {
   const formData = await request.formData();
   const url = new URL(request.url);
   const tableIdFromSearchParams = parseInt(url.searchParams.get("table"));
   const totalBill = Number(formData.get("totalBill"));
+  const customAmountToPay = parseInt(formData.get("payCustom"));
+  console.log(customAmountToPay);
   const orderId = await db.order.findMany({
     where: {
       tableId: tableIdFromSearchParams,
@@ -31,11 +34,7 @@ export const action = async ({ params, request }) => {
     },
   });
 
-  const tipAmount = formData.get("tipAmount");
   const tip = formData.get("tip");
-  console.log("TIP", tipAmount);
-  console.log(tip);
-
   switch (tip) {
     case "standard":
       await db.order.update({
@@ -214,116 +213,19 @@ export const loader = async ({ params, request }) => {
 
 const BranchDetail = () => {
   const { branch, restaurant, menu, tableId } = useLoaderData();
-  console.log(restaurant);
-  // const [id] = branch;
-  const [branchInfo] = branch;
-
   return (
     <>
-      <section
-        style={{ fontFamily: "system-ui, sans-serif", lineHeight: "1.4" }}
-        className="space-y-1 bg-white drop-shadow-lg rounded-2xl mt-4"
-      >
-        {branch.map((properties) => (
-          <div key={properties.id}>
-            <button className="w-full drop-shadow-md">
-              <div className="relative">
-                <img
-                  src={properties.ppt_image}
-                  className="max-h-60 w-full object-cover rounded-t-2xl"
-                />
-                {/* <img
-                src="https://madre-cafe.com/wp-content/uploads/2021/11/logo-madre-cafe-header.svg"
-                className=" bg-white "
-              /> */}
-              </div>
-
-              <div
-                className="flex flex-row p-4 rounded-b-xl text-left   
-              overflow-hidden sm:justify-start justify-between space-y-2 "
-                //   key={properties.id}
-              >
-                <div className="flex flex-row shrink-0 space-x-2 justify-between">
-                  <img
-                    className="shrink-0  object-contain h-24 w-24 rounded-full drop-shadow-sm bg-white"
-                    src={`${restaurant.logo}`}
-                  />
-                  <div className="flex flex-row space-x-2">
-                    {/* <p className="text-lg">{restaurant.name} </p> */}
-                    {/* <label> • </label>
-                  <p className="text-lg font-medium">{properties.name} </p> */}
-                  </div>
-                  <div className="flex flex-row space-x-2"></div>
-                </div>
-                {/* endRestaurant name and logo */}
-                {/* ----INFORMATION---- */}
-                <div className="shrink-0 space-y-1">
-                  {/* Rating */}
-                  <div className="flex flex-row space-x-2 items-center">
-                    <p className="text-lg font-lg">{restaurant.name} </p>
-                    {/* EXPLAIN If Restaurant and branch are the same doesnt show branch name */}
-                    {!restaurant.name.trim() === properties.name.trim() && (
-                      <>
-                        <label> • </label>
-                        <p className="text-md ">{properties.name} </p>
-                      </>
-                    )}
-                  </div>
-                  <div className="flex items-center space-x-1">
-                    {/* <StarIcon className="h-5 w-5" /> */}
-                    <p className="text-sm">{properties.rating}</p>
-                    <p className="text-sm">
-                      ({properties.rating_quantity}+ ratings)
-                    </p>
-                    <label>•</label>
-                    <span className="text-sm">{properties.cuisine}</span>
-                  </div>
-                  {/* endRating */}
-                  {/* Location */}
-                  <div className="flex flex-row space-x-1  ">
-                    {/* <CursorClickIcon className="h-5 w-5" /> */}
-                    <p className="text-sm ">
-                      {properties.address} • {properties.extraAddress} •{" "}
-                      {properties.city}
-                      {/* •{" "}
-                {properties.zipCode} */}
-                    </p>
-                  </div>
-                  {/* endLocation */}
-                  {/* Distance */}
-                </div>
-                {/* endDistance */}
-              </div>
-            </button>
-            <hr />
-            <LargeButtonWithIcon
-              to={`/menu/?rest=${restaurant.id}&branch=${branchInfo.id}&meal=${
-                menu.meal
-              }&table=${
-                tableId.table_number <= 0 ? 9999 : tableId.table_number
-              }`}
-            >
-              <p>View the menu</p>
-              <BookOpenIcon className="h-5 w-5" />
-            </LargeButtonWithIcon>
-            <hr />
-
-            <button className="py-4 px-4 justify-between flex flex-row w-full items-center  rounded-2xl text-center">
-              <a href={`tel://${properties.phone}`}>
-                Contact {restaurant.name}
-              </a>
-              <PhoneIcon className="h-5 w-5" />
-            </button>
-          </div>
-        ))}
-      </section>
+      <RestaurantInfoCard
+        restaurant={restaurant}
+        branch={branch}
+        menu={menu}
+        tableId={tableId}
+      />
       <section className="flex flex-col my-4 space-y-3">
         <h4 className="text-center ">Table {tableId.table_number}</h4>
         {/* TODO: All selected items at the table */}
         <OrderItemsDetail />
         <Payment />
-
-        {/* <Bill order={dishOrder} totalBill={totalBill} /> */}
       </section>
       <section></section>
     </>
@@ -407,7 +309,6 @@ export const PayFull = () => {
   const { totalBill, tipAmount } = useLoaderData();
   const [tip, setTip] = useState(0);
   const fetcher = useFetcher();
-  console.log(tipAmount);
 
   const tipObj = {
     standard: totalBill * 0.1,
@@ -473,7 +374,7 @@ export const PayFull = () => {
           </div>
         </div>
       </fetcher.Form>
-      <LargeButtonMain onClick={() => setTypeOfPayment("split")}>
+      <LargeButtonMain>
         <p>PAY</p>
       </LargeButtonMain>
     </>
@@ -495,7 +396,9 @@ export const TipButton = ({ val, children }) => {
 
 export const Modals = ({ onClose }) => {
   const [showModal, setShowModal] = useState("");
+  const [amount, setAmount] = useState("");
   const { menuItemsOnOrder, orderItemsOnTable } = useLoaderData();
+
   // console.log(orderItemsOnTable);
 
   useEffect(() => {
@@ -505,7 +408,7 @@ export const Modals = ({ onClose }) => {
       const obj = quantity;
       return obj;
     });
-    console.log(orderItemsOnTable);
+    console.log(orderItemsQuantity);
 
     const a = orderItemsQuantity.forEach((x, i) => {
       console.log("x", x);
@@ -580,7 +483,20 @@ export const Modals = ({ onClose }) => {
               </div>
             )}
             {showModal === "equal" && <div>equal</div>}
-            {showModal === "custom" && <div>custom</div>}
+            {showModal === "custom" && (
+              <Form method="POST">
+                <div>Enter amount</div>
+                <input
+                  type="number"
+                  name="payCustom"
+                  value={amount}
+                  onChange={(e) => setAmount(e.target.value)}
+                />
+                <LargeButtonMain type="submit">
+                  <label>Submit</label>
+                </LargeButtonMain>
+              </Form>
+            )}
           </ModalContainer>
         </Modal>
       )}
