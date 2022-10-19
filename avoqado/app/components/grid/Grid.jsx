@@ -4,16 +4,17 @@ function Grid({ children, className, ignore }) {
       className={` 
       w-full 
       px-8
- 
+      max-w-mobile bg-purple-500
+      md:max-w-mobile md:bg-red-500
+      sm:max-w-mobile sm:bg-yellow-500
+      
     ${className ? className : ""}`}
     >
       <div
         className="
         bg-white
-      w-full h-full mx-auto px-0 grid 
-      grid-cols-custom-laptop
-      md:grid-cols-custom-laptop
-      sm:grid-cols-custom-mobile gap-4
+      w-full h-full mx-auto px-0  max-w-mobile
+  
       "
       >
         {children}
@@ -23,7 +24,3 @@ function Grid({ children, className, ignore }) {
 }
 
 export { Grid };
-
-// max-w-laptop-full bg-purple-500
-// md:max-tablet-full md:bg-red-500
-// sm:max-w-mobile sm:bg-yellow-500

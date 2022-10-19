@@ -31,17 +31,17 @@ export function Layout() {
   );
 
   return (
-    <>
+    <main className="">
       <MainHeader
         changeHeader={match ? match.handle.changeHeader : null}
         hide={true}
       />
       {/* <Grid> */}
-      <div className="m-4">
+      <div className="px-4">
         <Outlet />
       </div>
       {/* </Grid> */}
-    </>
+    </main>
   );
 }
 
@@ -52,7 +52,7 @@ export default function App({ children }) {
         <Meta />
         <Links />
       </head>
-      <body>
+      <body className=" ">
         <Layout />
 
         <div id="modal-root" />

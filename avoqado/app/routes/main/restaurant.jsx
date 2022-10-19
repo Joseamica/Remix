@@ -6,8 +6,8 @@ export const loader = ({ params, request }) => {
 
 function Restaurant() {
   return (
-    <div className="col-start-1 col-end-13">
-      <h1>Restaurants</h1>
+    <div className="">
+      {/* <h1>Restaurants</h1> */}
       <div
       // style={{ background: "lightgrey", padding: 16 }}
       >

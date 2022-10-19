@@ -4,7 +4,7 @@ export let handle = { step: "step" };
 
 export const ModalHeader = ({ title, onClose }) => {
   return (
-    <header className="absolute top-0 right-0 left-0   bg-white p-4 ">
+    <header className="top-0 right-0 left-0   bg-white p-4 ">
       <div className="flex flex-row justify-between  items-center ">
         <h2 className="font-medium text-lg">{title}</h2>
         <button

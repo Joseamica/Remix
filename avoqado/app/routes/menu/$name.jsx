@@ -441,11 +441,12 @@ export default function MenuItem() {
             onClose={() => setShowModal({ cartInfo: false })}
             modalClassName={false}
           >
-            <ModalContainer cName=" bg-[#FCFDFD]">
-              <ModalHeader
-                onClose={() => setShowModal({ cartInfo: false })}
-                title="Cart"
-              />
+            <ModalContainer
+              cName=" bg-[#FCFDFD]"
+              modalHeader={true}
+              modalHeaderTitle="Cart"
+              onClose={() => setShowModal({ cartInfo: false })}
+            >
               <div className="mt-10">
                 {orderItem.map((item, i) => {
                   const menuItem = item.MenuItem;

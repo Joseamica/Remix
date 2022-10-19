@@ -1,4 +1,5 @@
 import { XIcon } from "@heroicons/react/outline";
+import { ModalHeader } from "./ModalHeader";
 
 export const ModalContainer = ({
   children,
@@ -6,7 +7,10 @@ export const ModalContainer = ({
   Cname,
   closeButton,
   setShowModal,
+  modalHeader,
+  modalHeaderTitle,
   cName,
+  onClose,
 }) => {
   return (
     <div
@@ -22,6 +26,9 @@ export const ModalContainer = ({
           src={imgHeader}
           className="max-h-60 w-full object-cover rounded-t-lg"
         />
+      )}
+      {modalHeader && (
+        <ModalHeader title={modalHeaderTitle} onClick={onClose} />
       )}
       <div className="p-5  overflow-y-scroll max-h-screen  z-50 ">
         {children}
