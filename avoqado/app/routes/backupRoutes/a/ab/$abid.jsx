@@ -11,11 +11,11 @@ export default function TeamDetail() {
       <p>(3)</p>
       <h2>{team.name}</h2>
       <div className="p-3 ">
-        {team?.players?.map((p) => (
+        {/* {team?.players?.map((p) => (
           <div key={p.id}>
             <Link to={`/a/ab/${abid}/rest/${p.id}`}>{p.name}</Link>
           </div>
-        ))}
+        ))} */}
       </div>
 
       <div>

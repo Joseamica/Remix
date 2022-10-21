@@ -21,11 +21,15 @@ model Restaurant {
 }
 
 model Branch {
-  id              Int        @id @default(autoincrement())
-  name            String
-  ppt_image       String
-  email           String
-  phone           Int?
+  id        Int    @id @default(autoincrement())
+  name      String
+  ppt_image String
+  email     String
+  phone     Int?
+  breakfast Int?
+  lunch     Int?
+  dinner    Int?
+
   city            String
   address         String
   extraAddress    String
@@ -39,7 +43,7 @@ model Branch {
 }
 
 model Table {
-  id                Int     @id @default(autoincrement())
+  id                String  @id @default(uuid())
   table_number      Int
   order_in_progress Boolean
   branch            Branch  @relation(fields: [branchId], references: [id])
@@ -90,12 +94,12 @@ model MenuItemExtra {
 
 model Order {
   id           Int      @id @default(autoincrement())
-  payed        Boolean
+  paid         Boolean
   creationDate DateTime
   orderedDate  DateTime
 
   Table     Table?      @relation(fields: [tableId], references: [id])
-  tableId   Int?
+  tableId   String?
   OrderItem OrderItem[]
   User      User[]
   tip       Decimal?

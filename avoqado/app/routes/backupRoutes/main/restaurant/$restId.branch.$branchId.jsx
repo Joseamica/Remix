@@ -16,15 +16,17 @@ import {
 import { db } from "../../../utils/db.server";
 import { getTableCount, getOrderId } from "../../../models/order.server";
 import { LargeButtonMain } from "~/components/ui/Buttons/Button";
-import { RestaurantInfoCard } from "~/comp/index";
+import { RestaurantInfoCard, TipButton, OrderItemsDetail } from "~/comp/index";
 
 export const action = async ({ params, request }) => {
   const formData = await request.formData();
   const url = new URL(request.url);
   const tableIdFromSearchParams = parseInt(url.searchParams.get("table"));
   const totalBill = Number(formData.get("totalBill"));
+
+  // EXPLAIN Splitbill_button>pay a custom amount>whatever input the user types
   const customAmountToPay = parseInt(formData.get("payCustom"));
-  console.log(customAmountToPay);
+
   const orderId = await db.order.findMany({
     where: {
       tableId: tableIdFromSearchParams,
@@ -70,13 +72,31 @@ export const loader = async ({ params, request }) => {
   const path = new URL(request.url).pathname;
   console.log(path);
 
-  const tableIdFromSearchParams = parseInt(url.searchParams.get("table"));
+  const tableIdFromSearchParams = url.searchParams.get("table");
 
   const restId = parseInt(params.restId);
   const branchId = parseInt(params.branchId);
 
+  const table = await db.table.findMany({
+    where: {
+      branchId: branchId,
+    },
+  });
+
+  const tableOperation = table.find((a) => {
+    if (tableIdFromSearchParams === a.id) {
+      return a.table_number;
+    }
+  });
+
+  const table_number = tableOperation.table_number;
+  console.log("Numero de mesa", table_number);
+
   let orderItemsOnTable = "";
-  const tableCount = await getTableCount();
+  const tableCount = await getTableCount(branchId);
+
+  // console.log("tabldeNumber", table_number, "TableCount", tableCount);
+  // const x = tableCount;
 
   if (!tableIdFromSearchParams) {
     throw new Error(
@@ -212,7 +232,9 @@ export const loader = async ({ params, request }) => {
 };
 
 const BranchDetail = () => {
-  const { branch, restaurant, menu, tableId } = useLoaderData();
+  const { branch, restaurant, menu, tableId, orderItemsOnTable, totalBill } =
+    useLoaderData();
+
   return (
     <>
       <RestaurantInfoCard
@@ -224,7 +246,10 @@ const BranchDetail = () => {
       <section className="flex flex-col my-4 space-y-3">
         <h4 className="text-center ">Table {tableId.table_number}</h4>
         {/* TODO: All selected items at the table */}
-        <OrderItemsDetail />
+        <OrderItemsDetail
+          orderItemsOnTable={orderItemsOnTable}
+          totalBill={totalBill}
+        />
         <Payment />
       </section>
       <section></section>
@@ -234,61 +259,8 @@ const BranchDetail = () => {
 
 export default BranchDetail;
 
-export const OrderItemsDetail = () => {
-  const { orderItemsOnTable, totalBill } = useLoaderData();
-  // console.log(
-  //   `%corderId ${orderId.id}`,
-  //   "color: green; background: yellow; font-size: 30px"
-  // );
-
-  return (
-    <div className="bg-white shadow-lg p-2 space-y-2 rounded-lg ">
-      <div className="flex flex-row justify-between">
-        <h2 className="text-2xl">Bill</h2>
-        <h2 className="text-2xl">${totalBill}</h2>
-      </div>
-      <hr />
-
-      {Array.isArray(orderItemsOnTable) &&
-        orderItemsOnTable.map((orderItems) => {
-          const menuItem = orderItems.MenuItem;
-          return (
-            <div className="w-full" key={orderItems.id}>
-              <div className="flex flex-row justify-between items-center space-x-2 ">
-                <div className="flex flex-row items-center space-x-4 shrink-0 ">
-                  {/* Quantity */}
-                  <label className="font-semibold p-0.5  text-mainTextColor rounded-lg ring-2 ring-slate-200 text-sm">
-                    {orderItems.quantity}
-                  </label>
-                  {/* Image */}
-                  <img src={menuItem.image} className="w-10 h-10 rounded-lg" />
-                </div>
-                {/* REVIEW si el name es muy largo, se buguea, como le hago para que se salte la linea */}
-                <div className="flex w-full flex-col text-clip overflow-hidden ">
-                  <p className="text-md font-semibold truncate ">
-                    {menuItem.name}
-                  </p>
-                  <p className="text-sm truncate">
-                    {/* {specs} {extraSpecs ? <>• {extraSpecs}</> : null} */}
-                  </p>
-                </div>
-                {orderItems.quantity > 1 && (
-                  <p className="text-sm text-gray-500">${orderItems.price}</p>
-                )}
-                <p className="text-sm">
-                  ${orderItems.price * orderItems.quantity}
-                </p>
-              </div>
-            </div>
-          );
-        })}
-    </div>
-  );
-};
-
 export const Payment = () => {
   const [typeOfPayment, setTypeOfPayment] = useState("");
-  console.log(typeOfPayment);
   return (
     <>
       <LargeButtonMain onClick={() => setTypeOfPayment("split")}>
@@ -298,7 +270,10 @@ export const Payment = () => {
         <p>PAY BILL</p>
       </LargeButtonMain>
       {typeOfPayment === "split" && (
-        <Modals onClose={() => setTypeOfPayment("")} />
+        <Modals
+          onClose={() => setTypeOfPayment("")}
+          setTypeOfPayment={setTypeOfPayment}
+        />
       )}
       {typeOfPayment === "payFull" && <PayFull />}
     </>
@@ -381,25 +356,10 @@ export const PayFull = () => {
   );
 };
 
-export const TipButton = ({ val, children }) => {
-  return (
-    <button
-      name="tip"
-      value={val}
-      className="flex flex-col border-slighlyGray border-solid border 
-  items-center text-left p-2 rounded-md min-w-[20%] focus:ring-2 focus:ring-black bg-white"
-    >
-      {children}
-    </button>
-  );
-};
-
 export const Modals = ({ onClose }) => {
   const [showModal, setShowModal] = useState("");
   const [amount, setAmount] = useState("");
   const { menuItemsOnOrder, orderItemsOnTable } = useLoaderData();
-
-  // console.log(orderItemsOnTable);
 
   useEffect(() => {
     const orderItemsQuantity = orderItemsOnTable.map((orderItem, i) => {

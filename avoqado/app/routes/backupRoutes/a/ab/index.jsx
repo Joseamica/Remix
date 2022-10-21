@@ -9,7 +9,7 @@ export default function AbIndex() {
       <p>TEST</p>
       {ab.map((t) => (
         <div key={t.id}>
-          <Link prefetch="render" to={`/a/ab/${t.id}`}>
+          <Link prefetch="render" to={`/a/ab/${t.id}/test`}>
             {t.name}
           </Link>
         </div>
