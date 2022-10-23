@@ -127,9 +127,9 @@ model OrderItemExtra {
 }
 
 model User {
-  id      Int    @id @default(autoincrement())
-  email   String
-  total   Float
-  Order   Order? @relation(fields: [orderId], references: [id])
+  id      String  @id @default(uuid())
+  email   String?
+  total   Float?
+  Order   Order?  @relation(fields: [orderId], references: [id])
   orderId Int?
 }

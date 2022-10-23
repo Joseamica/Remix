@@ -1,4 +1,4 @@
-import { json } from "@remix-run/node";
+import { isSession, json } from "@remix-run/node";
 import { Form, Link, useLoaderData, useLocation } from "@remix-run/react";
 import { db } from "../utils/db.server";
 import {
@@ -15,17 +15,25 @@ import {
 
 import { updateTipAmount } from "../models/payment.server";
 import invariant from "tiny-invariant";
-import { getSession, commitSession } from "../sessions";
+import {
+  getSession,
+  commitSession,
+  getUserId,
+  createUserSession,
+  // createUserSession,
+  // getUserId,
+} from "../sessions";
 import { LargeButtonMain } from "../components";
 import { useEffect, useState } from "react";
 import { ArrowNarrowRightIcon } from "@heroicons/react/solid";
 import { ArrowRightIcon } from "@heroicons/react/outline";
 import { Modal } from "../comp/modals";
+import { v4 as uuidv4 } from "uuid";
 
 export const loader = async ({ request, params }) => {
-  const session = await getSession(request.headers.get("Cookie"));
-  console.log(session.id);
-  // DELETES ORDER IF THE ORDER IS PAID AND THEN DELETES ORDERITEMS
+  const session = await getSession(request);
+  const userId = session.get("userId");
+
   invariant(params.branchId, "expected params.branchID");
   invariant(params.tableId, "expected params.tableId");
 
@@ -61,7 +69,7 @@ export const loader = async ({ request, params }) => {
   // ERRORS //
 
   // CREATE ORDER RELATED //
-  const order = await getOrderId(table?.id);
+  const [order] = await getOrderId(table?.id);
 
   try {
     const orderCount = await countOrderByTableId(table.id);
@@ -71,7 +79,7 @@ export const loader = async ({ request, params }) => {
       : // SI EXISTE LA ORDEN, SACAR TODOS LOS items dentro
         (orderedItems = await db.orderItem.findMany({
           where: {
-            orderId: Number(order[0].id),
+            orderId: Number(order.id),
           },
           include: {
             MenuItem: true,
@@ -79,6 +87,25 @@ export const loader = async ({ request, params }) => {
         }));
   } catch (err) {
     console.error(err);
+  }
+
+  try {
+    await db.user.upsert({
+      where: { id: userId || userId },
+      update: {
+        Order: {
+          connect: { id: order.id },
+        },
+      },
+      create: {
+        id: userId,
+        Order: {
+          connect: { id: order.id },
+        },
+      },
+    });
+  } catch (e) {
+    console.error(e);
   }
 
   const asignMenu = () => {
@@ -117,7 +144,13 @@ export const loader = async ({ request, params }) => {
     },
   });
 
-  return json({ branch, table, menuId, orderedItems, error });
+  return json({
+    branch,
+    table,
+    menuId,
+    orderedItems,
+    error,
+  });
 };
 export default function Index() {
   const { branch, table, menuId, orderedItems, error } = useLoaderData();
@@ -243,6 +276,10 @@ export const PayFull = ({ subtotal }) => {
 
 export const action = async ({ request, params }) => {
   const formData = await request.formData();
+  const session = await getSession(request.headers.get("Cookie"));
+
+  const userId = await getUserId(session);
+  console.log(userId);
   const { tableId } = params;
 
   const tip = formData.get("tip");

@@ -1,3 +1,4 @@
+import { json } from "@remix-run/node";
 import {
   Link,
   Links,
@@ -11,6 +12,7 @@ import {
 } from "@remix-run/react";
 import { Grid } from "./components/grid/Grid";
 import { MainHeader } from "./components/ui/Header/MainHeader";
+import { commitSession, getSession, getUser } from "./sessions";
 
 import styles from "./styles/tailwind.css";
 
@@ -19,6 +21,17 @@ export const meta = () => ({
   title: "avoqado",
   viewport: "width=device-width,initial-scale=1",
 });
+
+export const loader = async ({ request }) => {
+  const user = await getUser(request);
+  const session = await getSession(request);
+  session.set("userId", user.id);
+  console.log("userId de root.jsx: ", session.get("userId"));
+  return json(
+    { user },
+    { headers: { "Set-Cookie": await commitSession(session) } }
+  );
+};
 
 export function links() {
   return [{ rel: "stylesheet", href: styles }];
