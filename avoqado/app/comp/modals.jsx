@@ -30,8 +30,7 @@ const Backdrop = ({ children, handleClose }) => (
   <motion.div
     className="
       z-50 fixed inset-0
-      flex items-end 
-      bg-black bg-opacity-50
+      flex items-end justify-center      bg-black bg-opacity-50
       bg-backdrop backdrop-filter backdrop-blur-sm
     "
     onClick={handleClose}
@@ -57,7 +56,7 @@ const ModalContent = ({
     aria-label={ariaLabel}
     className={`relative ${
       className ||
-      " p-5 bg-white rounded-lg rounded-t-lg overflow-scroll  w-screen"
+      " p-5 bg-white rounded-lg rounded-t-lg overflow-scroll  w-screen max-w-mobile-full m-auto place-items-center"
     }`}
     variants={effect}
     initial="hidden"

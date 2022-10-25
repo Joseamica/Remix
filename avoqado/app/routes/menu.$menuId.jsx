@@ -14,7 +14,7 @@ import {
   ChevronUpIcon,
 } from "@heroicons/react/outline";
 import { Modal, ModalContainer } from "~/components";
-import { CartItemsDetailMC, MenuItemDetailMC } from "../comp/index";
+import { CartItemsDetailMC, MenuItemDetailMC, Invisible } from "../comp/index";
 import {
   createOrderItemsUingMenuItemId,
   getOrderId,
@@ -115,6 +115,7 @@ export default function Index() {
 
   return (
     <>
+      <Invisible />
       <h1 className="text-xl font-bold mt-4">Menu</h1>
       <div
         className="flex  bg-white  space-x-2  overflow-x-scroll whitespace-nowrap mt-2 sticky top-10 left-0 right-0 

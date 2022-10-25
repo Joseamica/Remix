@@ -14,7 +14,7 @@ export const ModalContainer = ({
 }) => {
   return (
     <div
-      className={` ${cName} bottom-0 bg-white fixed inset-x-0  rounded-t-lg h-auto max-h-max z-50 overflow-scroll `}
+      className={` ${cName} bottom-0 bg-white fixed inset-x-0  rounded-t-lg h-auto max-h-max z-50 overflow-scroll max-w-mobile-full m-auto`}
     >
       {closeButton && (
         <button onClick={() => setShowModal(false)}>

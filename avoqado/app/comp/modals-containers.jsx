@@ -38,15 +38,15 @@ export const MenuItemDetailMC = ({ menuItem, setQuantity, quantity }) => {
       ) : null}
 
       <Form method="POST">
-        <button
+        <LargeButtonMain
           className="largeButton bg-black text-white justify-center text-center"
           name="submit"
           type="submit"
           value="submit"
           // onClick={() => setShowModal(false)}
         >
-          Agregar
-        </button>
+          Add
+        </LargeButtonMain>
         <input type="hidden" name="price" value={menuItem.price} />
         <input type="hidden" name="name" value={menuItem.name} />
         <input type="hidden" name="id" value={menuItem.id} />

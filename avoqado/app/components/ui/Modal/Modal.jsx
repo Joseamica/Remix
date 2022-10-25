@@ -9,7 +9,7 @@ export function Modal({ children, modalClassName, className, onClose }) {
     <section className="fixed top-0 z-50 h-screen w-screen">
       <div
         onClick={onClose}
-        className="absolute inset-0 z-20 bg-black bg-opacity-90 transition-opacity"
+        className="fixed inset-0 z-20 bg-black bg-opacity-90 transition-opacity"
       ></div>
 
       {/* <div

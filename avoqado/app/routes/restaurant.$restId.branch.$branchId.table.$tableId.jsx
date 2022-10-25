@@ -6,6 +6,7 @@ import {
   OrderItemsDetail,
   TipButton,
   BoxContainer,
+  Invisible,
 } from "../comp/";
 import {
   countOrderByTableId,
@@ -186,6 +187,7 @@ export default function Index() {
   return (
     <div>
       {/* <Modal showModal >Hola</Modal> */}
+      <Invisible />
       <RestaurantInfoCard
         restaurant={restaurant}
         branch={branch}

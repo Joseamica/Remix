@@ -44,13 +44,13 @@ export function Layout() {
   );
 
   return (
-    <main className="">
+    <main className="bg-white p-3 h-max">
       <MainHeader
         changeHeader={match ? match.handle.changeHeader : null}
         hide={true}
       />
       {/* <Grid> */}
-      <div className="px-4">
+      <div className="">
         <Outlet />
       </div>
       {/* </Grid> */}
@@ -65,7 +65,7 @@ export default function App({ children }) {
         <Meta />
         <Links />
       </head>
-      <body className=" ">
+      <body className="relative  max-w-mobile-full place-items-center m-auto bg-gray-100">
         <Layout />
 
         <div id="modal-root" />
