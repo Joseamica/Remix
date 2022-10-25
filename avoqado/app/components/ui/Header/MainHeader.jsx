@@ -16,7 +16,7 @@ export const MainHeader = ({ changeHeader, children, hide }) => {
   const goBack = () => navigate(-1);
 
   return (
-    <nav className="sticky top-0 right-0 left-0 z-50 ">
+    <nav className="fixed top-0 right-0 left-0 z-50 ">
       {hide === false ? null : (
         <div className="flex flex-row justify-between px-2 py-2 rounded-b-2xl bg-white shadow-md ">
           <button

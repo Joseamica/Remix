@@ -17,23 +17,34 @@ import { updateTipAmount } from "../models/payment.server";
 import invariant from "tiny-invariant";
 import {
   getSession,
-  commitSession,
   getUserId,
-  createUserSession,
   // createUserSession,
   // getUserId,
 } from "../sessions";
 import { LargeButtonMain } from "../components";
 import { useEffect, useState } from "react";
-import { ArrowNarrowRightIcon } from "@heroicons/react/solid";
-import { ArrowRightIcon } from "@heroicons/react/outline";
-import { Modal } from "../comp/modals";
-import { v4 as uuidv4 } from "uuid";
+import { OnSplit, PayFull } from "~/comp/payments";
+import { Modal } from "~/comp/modals";
+import {
+  SplitBillMC,
+  SplitTypeCustom,
+  SplitTypeEqualParts,
+  SplitTypePerArticle,
+} from "~/comp/modals-containers";
 
 export const loader = async ({ request, params }) => {
   const session = await getSession(request);
-  const userId = session.get("userId");
+  const userId = await session.get("userId");
+  let userTotal = await db.user.findUnique({
+    where: {
+      id: userId,
+    },
+    select: {
+      total: true,
+    },
+  });
 
+  console.log(typeof userTotal.total);
   invariant(params.branchId, "expected params.branchID");
   invariant(params.tableId, "expected params.tableId");
 
@@ -150,16 +161,27 @@ export const loader = async ({ request, params }) => {
     menuId,
     orderedItems,
     error,
+    userTotal,
   });
 };
 export default function Index() {
-  const { branch, table, menuId, orderedItems, error } = useLoaderData();
+  const { branch, table, menuId, orderedItems, error, userTotal } =
+    useLoaderData();
   const { restaurant, Menu } = branch;
 
   // FIX No se si es correcto asi sacar el total quantity*price
   const subtotal =
     orderedItems.reduce((acc, item) => acc + item.price * item.quantity, 0) ??
     0;
+
+  console.log(
+    "%crestaurant.$restId.branch.$branchId.table.$tableId.jsx line:177 userTotal",
+    "color: #007acc;",
+    userTotal.total
+  );
+  if (!userTotal.total) {
+    userTotal;
+  }
 
   return (
     <div>
@@ -173,119 +195,110 @@ export default function Index() {
       />
       <section className="flex flex-col my-4 space-y-3">
         <h4 className="text-center ">---Table {table.table_number}---</h4>
-        <OrderItemsDetail
-          orderItemsOnTable={orderedItems}
-          subtotal={subtotal}
-        />
-        <Payment subtotal={subtotal} />
+
+        {/* TODO aqui me quede, tengo ver la forma que no se actualice o se borre todo al modificar un valo */}
+        {userTotal.total != null ? (
+          <OnSplit userTotal={userTotal.total} subtotal={subtotal} />
+        ) : (
+          <>
+            <OrderItemsDetail
+              orderItemsOnTable={orderedItems}
+              subtotal={subtotal}
+            />
+            <Payment subtotal={subtotal} orderItemsOnTable={orderedItems} />
+          </>
+        )}
       </section>
     </div>
   );
 }
 
-export const Payment = ({ subtotal }) => {
-  const [typeOfPayment, setTypeOfPayment] = useState("");
+export const Payment = ({ subtotal, orderItemsOnTable }) => {
+  const [openPayBill, setOpenPayBill] = useState(false);
+  const [showModal, setShowModal] = useState(false);
+  const [showAnotherModal, setShowAnotherModal] = useState(false);
+  const [showExtraModal, setShowExtraModal] = useState(false);
 
-  const handleModal = (value) => {
-    setTypeOfPayment(value);
-  };
+  const [splitType, setSplitType] = useState("");
 
   return (
     <>
-      <LargeButtonMain onClick={() => handleModal("split")}>
+      <LargeButtonMain onClick={() => setShowModal(true)}>
         <p>SPLIT BILL</p>
       </LargeButtonMain>
-      <LargeButtonMain onClick={() => handleModal("payFull")}>
+      <LargeButtonMain onClick={() => setOpenPayBill(true)}>
         <p>PAY BILL</p>
       </LargeButtonMain>
-      {/* {typeOfPayment === "split" && (
-        <Modals
-          onClose={() => setTypeOfPayment("")}
-          setTypeOfPayment={setTypeOfPayment}
+      {openPayBill && <PayFull subtotal={subtotal} />}
+      <Modal
+        fromBottom={true}
+        isOpen={showModal}
+        handleClose={() => setShowModal(false)}
+      >
+        <SplitBillMC
+          showModal={showModal}
+          setShowModal={setShowModal}
+          showAnotherModal={showAnotherModal}
+          setShowAnotherModal={setShowAnotherModal}
+          setSplitType={setSplitType}
+          SplitType={splitType}
+          showExtraModal={showExtraModal}
+          setShowExtraModal={setShowExtraModal}
         />
-      )}*/}
-      {typeOfPayment === "payFull" && <PayFull subtotal={subtotal} />}
-    </>
-  );
-};
-
-export const PayFull = ({ subtotal }) => {
-  const [tip, setTip] = useState(0);
-  const [grandTotal, setGrandTotal] = useState(0);
-
-  const tipObj = {
-    standard: subtotal * 0.1,
-    generous: subtotal * 0.12,
-    amazing: subtotal * 0.18,
-  };
-
-  useEffect(() => {
-    setGrandTotal(subtotal + tip);
-  }, [tip]);
-
-  return (
-    <>
-      <BoxContainer>
-        <h2 className="text-xl my-2">Would you like to leave a tip?</h2>
-        <div className="flex flex-row space-x-1 justify-between">
-          <TipButton val="standard" onClick={() => setTip(tipObj.standard)}>
-            <h3 className="text-black text-xs">Standard</h3>
-            <h4 className="font-medium text-sm">
-              {tipObj.standard.toLocaleString("en-US")}
-            </h4>
-          </TipButton>
-          <TipButton val="generous" onClick={() => setTip(tipObj.generous)}>
-            <h3 className="text-black text-xs">Generous</h3>
-            <h4 className="font-medium text-sm">
-              {tipObj.generous.toLocaleString("en-US")}
-            </h4>
-          </TipButton>
-
-          <TipButton val="amazing" onClick={() => setTip(tipObj.amazing)}>
-            <h3 className="text-black text-xs">Amazing</h3>
-            <h4 className="font-medium text-sm">
-              {tipObj.amazing.toLocaleString("en-US")}
-            </h4>
-          </TipButton>
-        </div>
-      </BoxContainer>
-      <BoxContainer>
-        <div className="">
-          <div className="flex flex-row justify-between ">
-            <p>Subtotal</p>
-            <p>${subtotal}</p>
-          </div>
-          <div className="flex flex-row justify-between">
-            <p>Tip</p>
-            <p>${tip.toFixed(2)}</p>
-          </div>
-          <hr className="my-2" />
-          <div className="flex flex-row justify-between">
-            <p className="text-2xl">Total</p>
-            <p className="text-2xl">${tip ? grandTotal : subtotal}</p>
-          </div>
-        </div>
-      </BoxContainer>
-      <Form method="POST">
-        <input type="hidden" name="tip" value={tip} />
-        <LargeButtonMain type="submit">PAY $ {grandTotal}</LargeButtonMain>
-      </Form>
+      </Modal>
+      <Modal
+        isOpen={showAnotherModal}
+        handleClose={() => setShowAnotherModal(false)}
+      >
+        {/* ALL MENU CONTAINERS COME FROM modals-containers.jsx */}
+        {splitType === "perArticle" && (
+          <SplitTypePerArticle orderItemsOnTable={orderItemsOnTable} />
+        )}
+        {splitType === "equalParts" && <SplitTypeEqualParts />}
+      </Modal>
+      {/* Este modal esta fuera del modal de arriba, para no tner que tener un modal dentro de otro modal que esta dentro de otro mdoal (3 modales) */}
+      <Modal
+        isOpen={showExtraModal}
+        handleClose={() => {
+          setShowExtraModal(false), setShowModal(false);
+        }}
+      >
+        <SplitTypeCustom onClose={setShowExtraModal} subtotal={subtotal} />
+      </Modal>
     </>
   );
 };
 
 export const action = async ({ request, params }) => {
   const formData = await request.formData();
-  const session = await getSession(request.headers.get("Cookie"));
+  const session = await getSession(request);
+  const sessionUserId = session.get("userId");
+  const tip = formData.get("tip");
+  const amountToPay = formData.get("amountToPay");
+  const removeSplit = formData.get("removeSplit");
 
-  const userId = await getUserId(session);
-  console.log(userId);
+  await db.user.update({
+    where: {
+      id: sessionUserId,
+    },
+    data: {
+      total: Number(amountToPay),
+    },
+  });
+  if (removeSplit === "remove") {
+    await db.user.update({
+      where: {
+        id: sessionUserId,
+      },
+      data: {
+        total: null,
+      },
+    });
+  }
+
   const { tableId } = params;
 
-  const tip = formData.get("tip");
-  console.log(tip);
   const [orderId] = await getOrderId(tableId);
-  console.log(orderId);
   await updateTipAmount(orderId.id, tip);
 
   return { succes: true };

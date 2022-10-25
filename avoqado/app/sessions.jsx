@@ -63,3 +63,16 @@ export async function createUserSession({ request, userId, remember }) {
     },
   };
 }
+
+// Username:    postgres
+// Password:    1204bfb25270095b19d7c87ec88d63bef5065010c418a2e7
+// Hostname:    avoqado-db.internal
+// Proxy Port:  5432
+// PG Port: 5433
+// Save your credenti
+
+// Username:    postgres
+// Password:    dd6225099f7265f679a59526136a3931b9b5045f54620771
+// Hostname:    avoq-db.internal
+// Proxy Port:  5432
+// PG Port: 5433

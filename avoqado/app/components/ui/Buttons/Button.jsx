@@ -15,11 +15,11 @@ export const Button = ({ type, children, ...rest }) => {
   );
 };
 
-export const LargeButtonMain = ({ type, children, ...rest }) => {
+export const LargeButtonMain = ({ className, type, children, ...rest }) => {
   return (
     <button
       type={type}
-      className="p-4 justify-center flex flex-row w-full items-center bg-black text-white shadow-md rounded-2xl text-center"
+      className={`${className} p-4 justify-center flex flex-row w-full items-center bg-black text-white shadow-md rounded-full text-center`}
       {...rest}
     >
       {children}

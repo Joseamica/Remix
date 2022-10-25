@@ -1,6 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -11,59 +8,57 @@ datasource db {
 }
 
 model Restaurant {
-  id    Int    @id @default(autoincrement())
-  name  String
-  logo  String
-  email String
-  phone Int
-
+  id     Int      @id @default(autoincrement())
+  name   String
+  logo   String
+  email  String
+  phone  Int
   Branch Branch[]
 }
 
 model Branch {
-  id        Int    @id @default(autoincrement())
-  name      String
-  ppt_image String
-  email     String
-  phone     Int?
-  breakfast Int?
-  lunch     Int?
-  dinner    Int?
-
+  id              Int        @id @default(autoincrement())
+  name            String
+  ppt_image       String
+  email           String
+  phone           Int?
   city            String
   address         String
   extraAddress    String
   rating          Float
   rating_quantity Int
   cuisine         String
-  restaurant      Restaurant @relation(fields: [restaurantId], references: [id])
   restaurantId    Int
-  Table           Table[]
+  breakfast       Int?
+  dinner          Int?
+  lunch           Int?
+  restaurant      Restaurant @relation(fields: [restaurantId], references: [id])
   Menu            Menu[]
+  Table           Table[]
 }
 
 model Table {
   id                String  @id @default(uuid())
   table_number      Int
   order_in_progress Boolean
-  branch            Branch  @relation(fields: [branchId], references: [id])
   branchId          Int
+  branch            Branch  @relation(fields: [branchId], references: [id])
   Order             Order[]
 }
 
 model Menu {
   id             Int              @id @default(autoincrement())
   name           String?
-  branch         Branch           @relation(fields: [branchId], references: [id])
   branchId       Int
+  branch         Branch           @relation(fields: [branchId], references: [id])
   MenuCategories MenuCategories[]
 }
 
 model MenuCategories {
   id       Int        @id @default(autoincrement())
   name     String
-  menu     Menu       @relation(fields: [menuId], references: [id])
   menuId   Int
+  menu     Menu       @relation(fields: [menuId], references: [id])
   MenuItem MenuItem[]
 }
 
@@ -74,8 +69,8 @@ model MenuItem {
   description      String
   price            Float
   available        Boolean
-  menuCategories   MenuCategories? @relation(fields: [menuCategoriesId], references: [id])
   menuCategoriesId Int?
+  menuCategories   MenuCategories? @relation(fields: [menuCategoriesId], references: [id])
   MenuItemExtra    MenuItemExtra[]
   OrderItem        OrderItem[]
 }
@@ -87,49 +82,49 @@ model MenuItemExtra {
   description    String
   price          Float
   available      Boolean
-  MenuItem       MenuItem?        @relation(fields: [menuItemId], references: [id])
   menuItemId     Int?
+  MenuItem       MenuItem?        @relation(fields: [menuItemId], references: [id])
   OrderItemExtra OrderItemExtra[]
 }
 
 model Order {
-  id           Int      @id @default(autoincrement())
-  paid         Boolean
+  id           Int         @id @default(autoincrement())
   creationDate DateTime
   orderedDate  DateTime
-
-  Table     Table?      @relation(fields: [tableId], references: [id])
-  tableId   String?
-  OrderItem OrderItem[]
-  User      User[]
-  tip       Decimal?
+  tableId      String?
+  tip          Decimal?
+  paid         Boolean
+  total        Decimal?
+  Table        Table?      @relation(fields: [tableId], references: [id])
+  OrderItem    OrderItem[]
+  User         User[]
 }
 
 model OrderItem {
   id             Int              @id @default(autoincrement())
   price          Float
   quantity       Int
-  MenuItem       MenuItem?        @relation(fields: [menuItemId], references: [id])
   menuItemId     Int?
-  Order          Order?           @relation(fields: [orderId], references: [id])
   orderId        Int?
+  MenuItem       MenuItem?        @relation(fields: [menuItemId], references: [id])
+  Order          Order?           @relation(fields: [orderId], references: [id])
   OrderItemExtra OrderItemExtra[]
 }
 
 model OrderItemExtra {
   id              Int            @id @default(autoincrement())
   quantity        Int
-  MenuItemExtra   MenuItemExtra? @relation(fields: [menuItemExtraId], references: [id])
   menuItemExtraId Int?
-  OrderItem       OrderItem?     @relation(fields: [orderItemId], references: [id])
   orderItemId     Int?
   comment         String?
+  MenuItemExtra   MenuItemExtra? @relation(fields: [menuItemExtraId], references: [id])
+  OrderItem       OrderItem?     @relation(fields: [orderItemId], references: [id])
 }
 
 model User {
   id      String  @id @default(uuid())
   email   String?
   total   Float?
-  Order   Order?  @relation(fields: [orderId], references: [id])
   orderId Int?
+  Order   Order?  @relation(fields: [orderId], references: [id])
 }

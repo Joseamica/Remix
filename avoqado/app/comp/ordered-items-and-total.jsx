@@ -1,11 +1,20 @@
-export const OrderItemsDetail = ({ orderItemsOnTable, subtotal }) => {
+export const OrderItemsDetail = ({
+  children,
+  hideBill,
+  orderItemsOnTable,
+  subtotal,
+}) => {
   return (
     <div className="bg-white shadow-lg p-2 space-y-2 rounded-2xl ">
-      <div className="flex flex-row justify-between">
-        <h2 className="text-2xl">Bill</h2>
-        <h2 className="text-2xl">${subtotal}</h2>
-      </div>
-      <hr />
+      {hideBill ? null : (
+        <>
+          <div className="flex flex-row justify-between">
+            <h2 className="text-2xl">Bill</h2>
+            <h2 className="text-2xl">${subtotal}</h2>
+          </div>
+          <hr />
+        </>
+      )}
 
       {Array.isArray(orderItemsOnTable) &&
         orderItemsOnTable.map((orderItems) => {
@@ -40,6 +49,8 @@ export const OrderItemsDetail = ({ orderItemsOnTable, subtotal }) => {
             </div>
           );
         })}
+
+      {children}
     </div>
   );
 };
