@@ -3,7 +3,12 @@ import { useState } from "react";
 import { LargeButtonMain } from "~/components";
 import { Modal } from "./modals";
 
-export const MenuItemDetailMC = ({ menuItem, setQuantity, quantity }) => {
+export const MenuItemDetailMC = ({
+  menuItem,
+  setQuantity,
+  quantity,
+  setShowModal,
+}) => {
   return (
     <div className="flex flex-col space-y-2">
       <div className="flex flex-row justify-between">
@@ -43,7 +48,7 @@ export const MenuItemDetailMC = ({ menuItem, setQuantity, quantity }) => {
           name="submit"
           type="submit"
           value="submit"
-          // onClick={() => setShowModal(false)}
+          onClick={() => setShowModal(false)}
         >
           Add
         </LargeButtonMain>
@@ -66,7 +71,7 @@ export const CartItemsDetailMC = ({ orderItem }) => {
             <Form
               method="POST"
               key={item.id}
-              className="flex flex-col bg-white p-3 m-1 drop-shadow-xl rounded-xl"
+              className="flex flex-col  p-3 drop-shadow-xl rounded-xl"
             >
               <div className="flex flex-row justify-between items-center">
                 <div className="space-x-2 flex flex-row w-fit justify-center items-center  ">
@@ -108,10 +113,33 @@ export const CartItemsDetailMC = ({ orderItem }) => {
           </div>
         );
       })}
-      <LargeButtonMain>hola</LargeButtonMain>
+      <LargeButtonMain>Ordenar</LargeButtonMain>
     </div>
   );
 };
+
+export function CartItemsModify({ menuItem, cartItem }) {
+  return (
+    <div>
+      <div className="flex flex-row justify-between ">
+        <h4 className="font-semibold text-lg">{menuItem.name}</h4>
+        <span>${menuItem.price}</span>
+      </div>
+      <p>{menuItem.description}</p>
+      {/* <p className="text-xs">{menuItem.specs}</p> */}
+      <div className="flex flex-row justify-between items-center">
+        <div className="space-x-2 flex flex-row w-fit justify-center items-center  ">
+          <div className="flex flex-col">
+            <input type="hidden" name="cartItem" value={cartItem.id} />
+          </div>
+        </div>
+        <input type="hidden" name="menuItemId" value={menuItem.id} />
+        <input type="hidden" name="cartItem" value={cartItem.id} />
+        <input type="hidden" name="cartQuantity" value={cartItem.quantity} />
+      </div>
+    </div>
+  );
+}
 
 export function SplitBillMC({
   showModal,

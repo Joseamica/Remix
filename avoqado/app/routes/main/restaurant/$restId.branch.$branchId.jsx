@@ -70,7 +70,6 @@ export const action = async ({ params, request }) => {
 export const loader = async ({ params, request }) => {
   const url = new URL(request.url);
   const path = new URL(request.url).pathname;
-  console.log(path);
 
   const tableIdFromSearchParams = url.searchParams.get("table");
 
@@ -90,13 +89,9 @@ export const loader = async ({ params, request }) => {
   });
 
   const table_number = tableOperation.table_number;
-  console.log("Numero de mesa", table_number);
 
   let orderItemsOnTable = "";
   const tableCount = await getTableCount(branchId);
-
-  // console.log("tabldeNumber", table_number, "TableCount", tableCount);
-  // const x = tableCount;
 
   if (!tableIdFromSearchParams) {
     throw new Error(
@@ -368,7 +363,6 @@ export const Modals = ({ onClose }) => {
       const obj = quantity;
       return obj;
     });
-    console.log(orderItemsQuantity);
 
     const a = orderItemsQuantity.forEach((x, i) => {
       console.log("x", x);

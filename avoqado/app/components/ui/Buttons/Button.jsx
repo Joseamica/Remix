@@ -1,3 +1,4 @@
+import { Link } from "@remix-run/react";
 import React from "react";
 
 export const Button = ({ type, children, ...rest }) => {
@@ -24,5 +25,18 @@ export const LargeButtonMain = ({ className, type, children, ...rest }) => {
     >
       {children}
     </button>
+  );
+};
+
+export const LargeLinkMain = ({ className, type, to, children, ...rest }) => {
+  return (
+    <Link
+      to={to}
+      type={type}
+      className={`${className} p-4 justify-center flex flex-row w-full items-center bg-black text-white shadow-md rounded-full text-center`}
+      {...rest}
+    >
+      {children}
+    </Link>
   );
 };

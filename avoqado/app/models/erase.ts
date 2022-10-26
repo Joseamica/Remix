@@ -13,20 +13,20 @@ export async function getUserByEmail(email: User["email"]) {
   return db.user.findUnique({ where: { email } });
 }
 
-export async function createUser(email: User["email"], password: string) {
-  const hashedPassword = await bcrypt.hash(password, 10);
+// export async function createUser(email: User["email"], password: string) {
+//   const hashedPassword = await bcrypt.hash(password, 10);
 
-  return db.user.create({
-    data: {
-      email,
-      password: {
-        create: {
-          hash: hashedPassword,
-        },
-      },
-    },
-  });
-}
+//   return db.user.create({
+//     data: {
+//       email,
+//       password: {
+//         create: {
+//           hash: hashedPassword,
+//         },
+//       },
+//     },
+//   });
+// }
 
 export async function deleteUserByEmail(email: User["email"]) {
   return db.user.delete({ where: { email } });

@@ -19,7 +19,7 @@ export function getOrderId(tableId) {
   });
 }
 
-export function getOrderItemsByOrderId(menuItemId,orderId){
+export function getOrderItemsByOrderId(menuItemId, orderId) {
   return db.orderItem.findMany({
     where: {
       menuItemId: menuItemId,
@@ -28,9 +28,7 @@ export function getOrderItemsByOrderId(menuItemId,orderId){
   });
 }
 
-
-
-export function createOrderByTableId(tableId){
+export function createOrderByTableId(tableId) {
   return db.order.create({
     data: {
       paid: false,
@@ -45,8 +43,12 @@ export function createOrderByTableId(tableId){
   });
 }
 
-
-export function createOrderItemsUingMenuItemId(menuItemPrice, menuItemQuantity, menuItemId, orderId){
+export function createOrderItemsUsingMenuItemId(
+  menuItemPrice,
+  menuItemQuantity,
+  menuItemId,
+  orderId
+) {
   return db.orderItem.create({
     data: {
       price: menuItemPrice,
@@ -65,7 +67,7 @@ export function createOrderItemsUingMenuItemId(menuItemPrice, menuItemQuantity, 
   });
 }
 
-export function orderItemUpdateQuantity(menuItemId, menuItemQuantity){
+export function orderItemUpdateQuantity(menuItemId, menuItemQuantity) {
   return db.orderItem.updateMany({
     where: {
       menuItemId: menuItemId,
@@ -76,11 +78,26 @@ export function orderItemUpdateQuantity(menuItemId, menuItemQuantity){
   });
 }
 
-export function countOrderByTableId(tableId){
+export function countOrderByTableId(tableId) {
   return db.order.count({
     where: {
-      tableId: tableId
-    }
-})
+      tableId: tableId,
+    },
+  });
 }
 
+export const DeleteOrderIfPaidAndItems = () => (
+  db.order.deleteMany({
+    where: {
+      paid: true,
+    },
+  }),
+  db.orderItem.deleteMany({
+    where: {
+      orderId: null,
+      Order: {
+        id,
+      },
+    },
+  })
+);

@@ -1,9 +1,41 @@
-import { json } from "@remix-run/node";
+import { json, redirect } from "@remix-run/node";
 import { useLoaderData } from "@remix-run/react";
 import { Link } from "react-router-dom";
+import { getSession, getUserId } from "~/sessions";
 import { db } from "~/utils/db.server";
 
 export const loader = async ({ request, params }) => {
+  const userId = await getUserId(request);
+  const hasTable = await db.user.findFirst({
+    where: { id: userId },
+    select: {
+      Order: {
+        select: {
+          tableId: true,
+          Table: {
+            select: {
+              branchId: true,
+              branch: {
+                select: {
+                  restaurantId: true,
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+  });
+
+  if (hasTable) {
+    const tableId = hasTable.Order.tableId;
+    const branchId = hasTable.Order.Table.branchId;
+    const restId = hasTable.Order.Table.branch.restaurantId;
+    return redirect(
+      `/restaurant/${restId}/branch/${branchId}/table/${tableId}`
+    );
+  }
+
   const restaurants = await db.restaurant.findMany({
     include: { Branch: true },
   });

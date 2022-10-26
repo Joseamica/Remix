@@ -21,7 +21,7 @@ model Branch {
   name            String
   ppt_image       String
   email           String
-  phone           Int?
+  phone           String?
   city            String
   address         String
   extraAddress    String

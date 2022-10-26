@@ -1,4 +1,4 @@
-import { json } from "@remix-run/node";
+import { json, redirect } from "@remix-run/node";
 import {
   Form,
   useActionData,
@@ -8,23 +8,23 @@ import {
 } from "@remix-run/react";
 import { db } from "../utils/db.server";
 import { AnimatePresence, motion, useScroll } from "framer-motion";
-import {
-  ChevronDownIcon,
-  ChevronLeftIcon,
-  ChevronUpIcon,
-} from "@heroicons/react/outline";
-import { Modal, ModalContainer } from "~/components";
+import { ChevronDownIcon } from "@heroicons/react/outline";
+import { Modal } from "~/comp/modals";
 import { CartItemsDetailMC, MenuItemDetailMC, Invisible } from "../comp/index";
 import {
-  createOrderItemsUingMenuItemId,
+  createOrderItemsUsingMenuItemId,
   getOrderId,
   getOrderItemsByOrderId,
   orderItemUpdateQuantity,
 } from "../models/order.server";
-import { createOrderItem } from "../models/menu.server";
+import {
+  DecreaseQuantity,
+  DeleteCartItem,
+  getCartItemAndMenuItem,
+  getQuantityCartItems,
+  IncreaseQuantity,
+} from "../models/cart.server";
 import { useEffect, useRef, useState } from "react";
-import invariant from "tiny-invariant";
-import { useLocation } from "react-router-dom";
 
 export const loader = async ({ request, params }) => {
   // -------> All of MENU ITEMS <----------------//
@@ -54,45 +54,40 @@ export const loader = async ({ request, params }) => {
   const url = new URL(request.url);
   const tableId = url.searchParams.get("table");
 
-  const [orderId] = await getOrderId(tableId);
+  const [order] = await getOrderId(tableId);
+  const orderId = order?.id;
 
-  const orderItem = await db.orderItem.findMany({
-    where: {
-      orderId: Number(orderId.id),
-    },
-    include: {
-      MenuItem: true,
-    },
-    orderBy: {
-      id: "asc",
-    },
-  });
+  const orderItem = await getCartItemAndMenuItem(orderId);
 
   return json({ menu, orderItem });
 };
+
+// MAIN
 export default function Index() {
   const { menu, orderItem } = useLoaderData();
 
   const fetcher = useFetcher();
   const transition = useTransition();
 
-  // console.log(
-  //   "%cmenu.$menuId.jsx line:71 fetcher",
-  //   "color: white; background-color: #007acc;",
-  //   fetcher
-  // );
   const { MenuItem } = orderItem;
   const errors = useActionData();
   const { MenuCategories } = menu;
 
   //USESTATE
-  const [scroll, setScroll] = useState();
-  const [menuItem, setMenuItem] = useState();
-  const [showModal, setShowModal] = useState({
-    itemInfo: false,
-    cartInfo: false,
-  });
+
+  const [menuItem, setMenuItem] = useState("");
+  const [modalType, setModalType] = useState("");
+  const [showModal, setShowModal] = useState(false);
   const [quantity, setQuantity] = useState(1);
+
+  let allOrderedItems = orderItem.reduce((accumulator, object) => {
+    return accumulator + object.quantity;
+  }, 0);
+  console.log(
+    "%cmenu.$menuId.jsx line:86 menuItem",
+    "color: #007acc;",
+    menuItem
+  );
 
   //USEREF
   const ref = useRef([]);
@@ -103,6 +98,10 @@ export default function Index() {
       top: ref.offsetTop - 110, //
       behavior: "smooth",
     });
+  };
+  const handleModals = (val) => {
+    setShowModal(true);
+    setModalType(val);
   };
 
   //USEEFFECT
@@ -160,8 +159,7 @@ export default function Index() {
                   <button
                     className="w-full p-2 text-left"
                     onClick={() => {
-                      setMenuItem(item);
-                      setShowModal({ itemInfo: true });
+                      setMenuItem(item), handleModals("ItemInfo");
                     }}
                     key={item.id}
                   >
@@ -187,43 +185,32 @@ export default function Index() {
           );
         })}
       </div>
-      {showModal.itemInfo && (
-        <Modal
-          onClose={() => setShowModal({ itemInfo: false })}
-          modalClassName={true}
-        >
-          <ModalContainer imgHeader={menuItem.image}>
-            <MenuItemDetailMC
-              menuItem={menuItem}
-              setQuantity={setQuantity}
-              quantity={quantity}
-            />
-          </ModalContainer>
-        </Modal>
-      )}
-      {showModal.cartInfo && (
-        <Modal
-          onClose={() => setShowModal({ cartInfo: false })}
-          modalClassName={false}
-        >
-          <ModalContainer
-            cName=" bg-[#FCFDFD]"
-            modalHeader={true}
-            modalHeaderTitle="Cart"
-            onClose={() => setShowModal({ cartInfo: false })}
-          >
-            <CartItemsDetailMC orderItem={orderItem} />
-          </ModalContainer>
-        </Modal>
-      )}
-      <button
-        className="bg-black sticky text-xl mt-auto ml-auto bottom-5 right-5 rounded-full p-5 w-full text-white"
-        onClick={() => setShowModal({ cartInfo: true })}
-        disabled={transition.submission}
+      <Modal
+        isOpen={showModal}
+        handleClose={() => setShowModal(false)}
+        // EXPLAIN aqui si abre el modal ITemInfo si pasara la prop de la imagen, sino sera un empty string
+        imgHeader={modalType === "ItemInfo" ? menuItem.image : ""}
       >
-        {/* {transition.submission ? "OpeningCart" : "Opened"} */}
-        <p>Cart ({orderItem ? orderItem.length : 0})</p>
-      </button>
+        {modalType == "ItemInfo" && (
+          <MenuItemDetailMC
+            menuItem={menuItem}
+            setQuantity={setQuantity}
+            quantity={quantity}
+            setShowModal={setShowModal}
+          />
+        )}
+        {modalType == "CartInfo" && <CartItemsDetailMC orderItem={orderItem} />}
+      </Modal>
+
+      {orderItem.length > 0 && (
+        <button
+          className="bg-black sticky text-xl mt-auto ml-auto bottom-5 right-5 rounded-full p-5 w-full text-white"
+          onClick={() => handleModals("CartInfo")}
+        >
+          {/* {transition.submission ? "OpeningCart" : "Opened"} */}
+          <p>Cart ({allOrderedItems})</p>
+        </button>
+      )}
     </>
   );
 }
@@ -234,7 +221,11 @@ export const action = async ({ params, request }) => {
   const menuItemId = parseInt(formData.get("id"));
   const menuItemPrice = parseInt(formData.get("price"));
   const menuItemQuantity = parseInt(formData.get("quantity"));
-  const submitItemToOrder = formData.get("submit");
+  console.log(
+    "%cmenu.$menuId.jsx aaaaaaaaaaa line:223 menuItemId",
+    "color: white; background-color: #26bfa5;",
+    menuItemId
+  );
 
   //From Params get tableId -> we want the tableId to get the OrderId searching by table.
   const url = new URL(request.url);
@@ -247,9 +238,11 @@ export const action = async ({ params, request }) => {
   // Get orderItems that are in the order using menuItemId (get MenuItems from setMenuItems from "hidden" input)
 
   try {
-    const [orderItemsId] = await getOrderItemsByOrderId(menuItemId, orderId.id);
+    const [orderItemsId] =
+      (await getOrderItemsByOrderId(menuItemId, orderId.id)) ?? null;
+
     if (!orderItemsId) {
-      await createOrderItemsUingMenuItemId(
+      await createOrderItemsUsingMenuItemId(
         menuItemPrice,
         menuItemQuantity,
         menuItemId,
@@ -259,7 +252,7 @@ export const action = async ({ params, request }) => {
       await orderItemUpdateQuantity(menuItemId, menuItemQuantity);
     }
   } catch (e) {
-    console.error(e);
+    console.error("errorcito" + e);
   }
 
   //>>>>>>>>>>>>>>>>>>>>>>>>>CART<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<</
@@ -268,42 +261,17 @@ export const action = async ({ params, request }) => {
   const action = formData.get("action");
   const cartItem = formData.get("cartItem");
   const cartQuantity = Number(formData.get("cartQuantity"));
-  console.log(cartItem, cartQuantity);
 
   switch (action) {
     case "increaseQuantityCart":
-      await db.orderItem.update({
-        where: {
-          id: Number(cartItem),
-        },
-        data: {
-          quantity: cartQuantity + 1,
-        },
-      });
+      await IncreaseQuantity(cartItem, cartQuantity);
+
       break;
     case "decreaseQuantityCart":
-      await db.orderItem.update({
-        where: {
-          id: Number(cartItem),
-        },
-        data: {
-          quantity: cartQuantity - 1,
-        },
-      });
-      const quantityCartItem = await db.orderItem.findUnique({
-        where: {
-          id: Number(cartItem),
-        },
-        select: {
-          quantity: true,
-        },
-      });
+      await DecreaseQuantity(cartItem, cartQuantity);
+      const quantityCartItem = await getQuantityCartItems(cartItem);
       if (quantityCartItem.quantity <= 0) {
-        await db.orderItem.delete({
-          where: {
-            id: Number(cartItem),
-          },
-        });
+        await DeleteCartItem(cartItem);
       }
       break;
   }

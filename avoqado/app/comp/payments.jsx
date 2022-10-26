@@ -1,31 +1,51 @@
 import { Form, useLoaderData } from "@remix-run/react";
-import { useEffect, useState } from "react";
-import { LargeButtonMain, Modal, ModalContainer } from "~/components";
+import { forwardRef, useEffect, useState } from "react";
+import { LargeButtonMain } from "~/components";
 import { TipButton } from "./button";
 import { BoxContainer } from "./containers";
 import { SplitTypeCustom } from "./modals-containers";
-import { Modal as ModalNew } from "./modals";
+import { Modal } from "./modals";
 import { OrderItemsDetail } from "./ordered-items-and-total";
+import { PencilIcon } from "@heroicons/react/outline";
+import { Divider } from "./divider";
 
-export const PayFull = ({ subtotal }) => {
+export const PayFull = forwardRef(({ subtotal, userTotal }, ref) => {
   const [tip, setTip] = useState(0);
   const [grandTotal, setGrandTotal] = useState(0);
   const [showModal, setShowModal] = useState(false);
 
+  const typeOfAmount = subtotal ?? userTotal;
+
   const tipObj = {
-    standard: subtotal * 0.1,
-    generous: subtotal * 0.12,
-    amazing: subtotal * 0.18,
+    standard: typeOfAmount * 0.1,
+    generous: typeOfAmount * 0.12,
+    amazing: typeOfAmount * 0.18,
   };
+  // useEffect(() => {
+  //   if (subtotal) {
+  //     // setType(subtotal);
+  //     console.log("subtotal");
+  //   } else if (userTotal) {
+  //     setType(userTotal);
+  //   }
+  // }, [subtotal, userTotal]);
 
   useEffect(() => {
-    setGrandTotal(subtotal + tip);
+    setGrandTotal(typeOfAmount + tip);
   }, [tip]);
+
+  useEffect(() => {
+    setTimeout(() => {
+      ref?.current.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 500);
+  }, []);
 
   return (
     <>
       <BoxContainer>
-        <h2 className="text-xl my-2">Would you like to leave a tip?</h2>
+        <h2 className="text-xl my-2" ref={ref}>
+          Would you like to leave a tip?
+        </h2>
         <div className="flex flex-row space-x-1 justify-between">
           <TipButton val="standard" onClick={() => setTip(tipObj.standard)}>
             <h3 className="text-black text-xs">Standard</h3>
@@ -47,9 +67,13 @@ export const PayFull = ({ subtotal }) => {
             </h4>
           </TipButton>
           <TipButton val="custom" onClick={() => setShowModal(true)}>
-            <h3 className="text-black text-xs">Other</h3>
+            <h3 className="text-black text-xs">Custom</h3>
             <h4 className="font-medium text-sm">
-              ${tip.toLocaleString("en-US")}
+              {tip > 0 ? (
+                `$ ${tip.toLocaleString("en-US")}`
+              ) : (
+                <PencilIcon className="h-5 w-5" />
+              )}
             </h4>
           </TipButton>
         </div>
@@ -58,7 +82,7 @@ export const PayFull = ({ subtotal }) => {
         <div className="">
           <div className="flex flex-row justify-between ">
             <p>Subtotal</p>
-            <p>${subtotal}</p>
+            <p>${typeOfAmount}</p>
           </div>
           <div className="flex flex-row justify-between">
             <p>Tip</p>
@@ -67,7 +91,7 @@ export const PayFull = ({ subtotal }) => {
           <hr className="my-2" />
           <div className="flex flex-row justify-between">
             <p className="text-2xl">Total</p>
-            <p className="text-2xl">${tip ? grandTotal : subtotal}</p>
+            <p className="text-2xl">${tip ? grandTotal : typeOfAmount}</p>
           </div>
         </div>
       </BoxContainer>
@@ -75,33 +99,26 @@ export const PayFull = ({ subtotal }) => {
         <input type="hidden" name="tip" value={tip} />
         <LargeButtonMain type="submit">PAY $ {grandTotal}</LargeButtonMain>
       </Form>
-      {showModal && (
-        <Modal onClose={() => setShowModal(false)}>
-          <ModalContainer>
-            <Form method="POST">
-              <div className="flex flex-row items-center w-full my-2 rounded-xl bg-gray-100 p-2">
-                <label className="text-6xl bg-gray-100">$</label>
-                <input
-                  type="number"
-                  onChange={(e) => setTip(Number(e.target.value))}
-                  className="flex w-full text-6xl placeholder:p-2 placeholder:text-6xl bg-transparent h-20 "
-                  placeholder="0.00"
-                />
-                <input type="hidden" name="tip" value={tip} />
-              </div>
-              <LargeButtonMain
-                type="submit"
-                onClick={() => setShowModal(false)}
-              >
-                Confirm
-              </LargeButtonMain>
-            </Form>
-          </ModalContainer>
-        </Modal>
-      )}
+      <Modal isOpen={showModal} handleClose={() => setShowModal(false)}>
+        <Form method="POST">
+          <div className="flex flex-row items-center w-full my-2 rounded-xl bg-gray-100 p-2">
+            <label className="text-6xl bg-gray-100">$</label>
+            <input
+              type="number"
+              onChange={(e) => setTip(Number(e.target.value))}
+              className="flex w-full text-6xl placeholder:p-2 placeholder:text-6xl bg-transparent h-20 "
+              placeholder="0.00"
+            />
+            <input type="hidden" name="tip" value={tip} />
+          </div>
+          <LargeButtonMain type="submit" onClick={() => setShowModal(false)}>
+            Confirm
+          </LargeButtonMain>
+        </Form>
+      </Modal>
     </>
   );
-};
+});
 
 export const OnSplit = ({ userTotal, subtotal }) => {
   const [showModal, setShowModal] = useState(false);
@@ -114,6 +131,8 @@ export const OnSplit = ({ userTotal, subtotal }) => {
           <h2 className="text-2xl">Paying</h2>
           <h2 className="text-2xl">${userTotal}</h2>
         </div>
+        <Divider />
+
         <LargeButtonMain
           onClick={() => {
             setShowModal(true), setTypeModal("EditSplit");
@@ -128,8 +147,10 @@ export const OnSplit = ({ userTotal, subtotal }) => {
         >
           See Order
         </LargeButtonMain>
+        {/* EXPLAIN aqui es donde se escoge el tip subtotal tip y total */}
+        <PayFull userTotal={userTotal} />
       </div>
-      <ModalNew isOpen={showModal} handleClose={() => setShowModal(false)}>
+      <Modal isOpen={showModal} handleClose={() => setShowModal(false)}>
         {typeModal === "EditSplit" && (
           <SplitTypeCustom userTotal={userTotal} onClose={setShowModal}>
             <LargeButtonMain
@@ -151,7 +172,7 @@ export const OnSplit = ({ userTotal, subtotal }) => {
             </OrderItemsDetail>
           </>
         )}
-      </ModalNew>
+      </Modal>
     </>
   );
 };

@@ -26,7 +26,7 @@ export const loader = async ({ request }) => {
   const user = await getUser(request);
   const session = await getSession(request);
   session.set("userId", user.id);
-  console.log("userId de root.jsx: ", session.get("userId"));
+  console.log("userId de root.jsx>>>> ", session.get("userId"));
   return json(
     { user },
     { headers: { "Set-Cookie": await commitSession(session) } }
@@ -45,10 +45,7 @@ export function Layout() {
 
   return (
     <main className="bg-white p-3 h-max">
-      <MainHeader
-        changeHeader={match ? match.handle.changeHeader : null}
-        hide={true}
-      />
+      <MainHeader changeHeader={match ? match.handle.changeHeader : null} />
       {/* <Grid> */}
       <div className="">
         <Outlet />

@@ -1,13 +1,7 @@
 import { isSession, json } from "@remix-run/node";
-import { Form, Link, useLoaderData, useLocation } from "@remix-run/react";
+import { useLoaderData } from "@remix-run/react";
 import { db } from "../utils/db.server";
-import {
-  RestaurantInfoCard,
-  OrderItemsDetail,
-  TipButton,
-  BoxContainer,
-  Invisible,
-} from "../comp/";
+import { RestaurantInfoCard, OrderItemsDetail, Invisible } from "../comp/";
 import {
   countOrderByTableId,
   createOrderByTableId,
@@ -16,14 +10,9 @@ import {
 
 import { updateTipAmount } from "../models/payment.server";
 import invariant from "tiny-invariant";
-import {
-  getSession,
-  getUserId,
-  // createUserSession,
-  // getUserId,
-} from "../sessions";
+import { getSession, getUserId } from "../sessions";
 import { LargeButtonMain } from "../components";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { OnSplit, PayFull } from "~/comp/payments";
 import { Modal } from "~/comp/modals";
 import {
@@ -32,20 +21,23 @@ import {
   SplitTypeEqualParts,
   SplitTypePerArticle,
 } from "~/comp/modals-containers";
+import { LargeLinkMain } from "~/components/ui/Buttons/Button";
+import {
+  DecreaseQuantity,
+  DeleteCartItem,
+  getQuantityCartItems,
+  IncreaseQuantity,
+} from "~/models/cart.server";
+import { getUserTotal } from "~/models/user.server";
 
 export const loader = async ({ request, params }) => {
-  const session = await getSession(request);
-  const userId = await session.get("userId");
-  let userTotal = await db.user.findUnique({
-    where: {
-      id: userId,
-    },
-    select: {
-      total: true,
-    },
-  });
+  const userId = await getUserId(request);
 
-  console.log(typeof userTotal.total);
+  let userT = await getUserTotal(userId);
+
+  //TODO REPAIR
+  const userTotal = userT?.total ?? 0;
+
   invariant(params.branchId, "expected params.branchID");
   invariant(params.tableId, "expected params.tableId");
 
@@ -170,19 +162,9 @@ export default function Index() {
     useLoaderData();
   const { restaurant, Menu } = branch;
 
-  // FIX No se si es correcto asi sacar el total quantity*price
   const subtotal =
     orderedItems.reduce((acc, item) => acc + item.price * item.quantity, 0) ??
     0;
-
-  console.log(
-    "%crestaurant.$restId.branch.$branchId.table.$tableId.jsx line:177 userTotal",
-    "color: #007acc;",
-    userTotal.total
-  );
-  if (!userTotal.total) {
-    userTotal;
-  }
 
   return (
     <div>
@@ -198,16 +180,20 @@ export default function Index() {
       <section className="flex flex-col my-4 space-y-3">
         <h4 className="text-center ">---Table {table.table_number}---</h4>
 
-        {/* TODO aqui me quede, tengo ver la forma que no se actualice o se borre todo al modificar un valo */}
-        {userTotal.total != null ? (
-          <OnSplit userTotal={userTotal.total} subtotal={subtotal} />
+        {userTotal !== 0 ? (
+          <OnSplit userTotal={userTotal} subtotal={subtotal} />
         ) : (
           <>
             <OrderItemsDetail
               orderItemsOnTable={orderedItems}
               subtotal={subtotal}
             />
-            <Payment subtotal={subtotal} orderItemsOnTable={orderedItems} />
+            <Payment
+              subtotal={subtotal}
+              orderItemsOnTable={orderedItems}
+              menuId={menuId}
+              tableId={table.id}
+            />
           </>
         )}
       </section>
@@ -215,58 +201,70 @@ export default function Index() {
   );
 }
 
-export const Payment = ({ subtotal, orderItemsOnTable }) => {
+export const Payment = ({ subtotal, orderItemsOnTable, menuId, tableId }) => {
   const [openPayBill, setOpenPayBill] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [showAnotherModal, setShowAnotherModal] = useState(false);
   const [showExtraModal, setShowExtraModal] = useState(false);
 
   const [splitType, setSplitType] = useState("");
+  const ref = useRef();
 
   return (
     <>
-      <LargeButtonMain onClick={() => setShowModal(true)}>
-        <p>SPLIT BILL</p>
-      </LargeButtonMain>
-      <LargeButtonMain onClick={() => setOpenPayBill(true)}>
-        <p>PAY BILL</p>
-      </LargeButtonMain>
-      {openPayBill && <PayFull subtotal={subtotal} />}
-      <Modal
-        fromBottom={true}
-        isOpen={showModal}
-        handleClose={() => setShowModal(false)}
-      >
-        <SplitBillMC
-          showModal={showModal}
-          setShowModal={setShowModal}
-          showAnotherModal={showAnotherModal}
-          setShowAnotherModal={setShowAnotherModal}
-          setSplitType={setSplitType}
-          SplitType={splitType}
-          showExtraModal={showExtraModal}
-          setShowExtraModal={setShowExtraModal}
-        />
-      </Modal>
-      <Modal
-        isOpen={showAnotherModal}
-        handleClose={() => setShowAnotherModal(false)}
-      >
-        {/* ALL MENU CONTAINERS COME FROM modals-containers.jsx */}
-        {splitType === "perArticle" && (
-          <SplitTypePerArticle orderItemsOnTable={orderItemsOnTable} />
-        )}
-        {splitType === "equalParts" && <SplitTypeEqualParts />}
-      </Modal>
-      {/* Este modal esta fuera del modal de arriba, para no tner que tener un modal dentro de otro modal que esta dentro de otro mdoal (3 modales) */}
-      <Modal
-        isOpen={showExtraModal}
-        handleClose={() => {
-          setShowExtraModal(false), setShowModal(false);
-        }}
-      >
-        <SplitTypeCustom onClose={setShowExtraModal} subtotal={subtotal} />
-      </Modal>
+      {/* EXPLAIN si no hay ninguna orden, mostrar boton de ordenar */}
+      {subtotal <= 0 ? (
+        <div>
+          <LargeLinkMain to={`/menu/${menuId.id}?table=${tableId}`}>
+            Order Food
+          </LargeLinkMain>
+        </div>
+      ) : (
+        <>
+          <LargeButtonMain onClick={() => setShowModal(true)}>
+            <p>SPLIT BILL</p>
+          </LargeButtonMain>
+          <LargeButtonMain onClick={() => setOpenPayBill(true)}>
+            <p>PAY BILL</p>
+          </LargeButtonMain>
+          {openPayBill && <PayFull subtotal={subtotal} ref={ref} />}
+          <Modal
+            fromBottom={true}
+            isOpen={showModal}
+            handleClose={() => setShowModal(false)}
+          >
+            <SplitBillMC
+              showModal={showModal}
+              setShowModal={setShowModal}
+              showAnotherModal={showAnotherModal}
+              setShowAnotherModal={setShowAnotherModal}
+              setSplitType={setSplitType}
+              SplitType={splitType}
+              showExtraModal={showExtraModal}
+              setShowExtraModal={setShowExtraModal}
+            />
+          </Modal>
+          <Modal
+            isOpen={showAnotherModal}
+            handleClose={() => setShowAnotherModal(false)}
+          >
+            {/* ALL MENU CONTAINERS COME FROM modals-containers.jsx */}
+            {splitType === "perArticle" && (
+              <SplitTypePerArticle orderItemsOnTable={orderItemsOnTable} />
+            )}
+            {splitType === "equalParts" && <SplitTypeEqualParts />}
+          </Modal>
+          {/* Este modal esta fuera del modal de arriba, para no tner que tener un modal dentro de otro modal que esta dentro de otro mdoal (3 modales) */}
+          <Modal
+            isOpen={showExtraModal}
+            handleClose={() => {
+              setShowExtraModal(false), setShowModal(false);
+            }}
+          >
+            <SplitTypeCustom onClose={setShowExtraModal} subtotal={subtotal} />
+          </Modal>
+        </>
+      )}
     </>
   );
 };
@@ -278,15 +276,17 @@ export const action = async ({ request, params }) => {
   const tip = formData.get("tip");
   const amountToPay = formData.get("amountToPay");
   const removeSplit = formData.get("removeSplit");
+  if (amountToPay) {
+    await db.user.update({
+      where: {
+        id: sessionUserId,
+      },
+      data: {
+        total: Number(amountToPay),
+      },
+    });
+  }
 
-  await db.user.update({
-    where: {
-      id: sessionUserId,
-    },
-    data: {
-      total: Number(amountToPay),
-    },
-  });
   if (removeSplit === "remove") {
     await db.user.update({
       where: {
@@ -302,6 +302,25 @@ export const action = async ({ request, params }) => {
 
   const [orderId] = await getOrderId(tableId);
   await updateTipAmount(orderId.id, tip);
+
+  const action = formData.get("action");
+  const cartItem = formData.get("cartItem");
+  console.log("CARTITEM", cartItem);
+  const cartQuantity = Number(formData.get("cartQuantity"));
+
+  switch (action) {
+    case "increaseQuantityCart":
+      await IncreaseQuantity(cartItem, cartQuantity);
+
+      break;
+    case "decreaseQuantityCart":
+      await DecreaseQuantity(cartItem, cartQuantity);
+      const quantityCartItem = await getQuantityCartItems(cartItem);
+      if (quantityCartItem.quantity <= 0) {
+        await DeleteCartItem(cartItem);
+      }
+      break;
+  }
 
   return { succes: true };
 };
